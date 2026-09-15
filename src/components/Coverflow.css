@@ -1,25 +1,40 @@
-.coverflow-container {
+.gallery-viewport {
   width: 100vw;
   height: 100vh;
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(20px);
+  justify-content: flex-start;
+  background: rgba(10, 10, 12, 0.85);
+  backdrop-filter: blur(24px);
   overflow: hidden;
   position: relative;
+  user-select: none;
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 6%,
+    black 94%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 6%,
+    black 94%,
+    transparent 100%
+  );
 }
 
-.coverflow-settings-btn {
+.gallery-settings-btn {
   position: absolute;
-  top: 18px;
-  right: 20px;
+  top: 20px;
+  right: 24px;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.15);
   color: #ffffff;
   font-size: 16px;
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -30,85 +45,132 @@
   backdrop-filter: blur(8px);
 }
 
-.coverflow-settings-btn:hover {
+.gallery-settings-btn:hover {
   background: rgba(255, 255, 255, 0.2);
-  transform: scale(1.05);
+  transform: scale(1.08);
 }
 
-.coverflow-settings-btn:active {
+.gallery-settings-btn:active {
   transform: scale(0.95);
 }
 
-.coverflow-swiper {
-  width: 100%;
-  height: 80%;
-  padding: 40px 0;
-}
-
-.coverflow-slide {
-  width: 45%;
-  max-width: 600px;
-  background: transparent;
-  border-radius: 8px;
-  overflow: hidden;
-  transition: filter 0.3s ease;
-}
-
-.slide-content {
-  position: relative;
-  width: 100%;
-  height: 100%;
+.gallery-track {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 10px;
+  padding: 0 40px;
+  transition: transform 0.35s cubic-bezier(0.2, 0, 0, 1);
+  will-change: transform;
 }
 
-.slide-image {
+.gallery-card {
+  height: 420px;
+  max-height: 62vh;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+  transition: width 0.35s cubic-bezier(0.2, 0, 0, 1),
+              filter 0.25s ease,
+              transform 0.2s ease,
+              box-shadow 0.3s ease;
+  box-sizing: border-box;
+}
+
+.gallery-card.inactive {
+  width: 62px;
+  flex-shrink: 0;
+  cursor: pointer;
+  filter: brightness(0.65) contrast(1.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.gallery-card.inactive:hover {
+  filter: brightness(0.95) contrast(1.02);
+  border-color: rgba(255, 255, 255, 0.28);
+  transform: translateY(-3px);
+}
+
+.gallery-card.active {
+  width: 58vw;
+  max-width: 740px;
+  flex-shrink: 0;
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.12);
+  filter: brightness(1);
+  z-index: 10;
+}
+
+.gallery-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 8px;
+  object-position: center;
   user-select: none;
   -webkit-user-drag: none;
-  transition: filter 0.35s ease;
-}
-
-.slide-image.inactive {
-  filter: brightness(0.35);
-}
-
-.slide-image.active {
-  filter: brightness(1);
-}
-
-.filename-pill {
-  position: absolute;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.55);
-  color: rgba(255, 255, 255, 0.9);
-  padding: 6px 20px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  white-space: nowrap;
-  max-width: 80%;
-  overflow: hidden;
-  text-overflow: ellipsis;
   pointer-events: none;
 }
 
-.coverflow-empty {
+.gallery-pill {
+  position: absolute;
+  bottom: 12px;
+  left: 14px;
+  background: rgba(10, 10, 14, 0.82);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 5px 12px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  max-width: 85%;
+}
+
+.pill-name {
+  color: #f1f5f9;
+  font-family: 'Cascadia Code', 'Consolas', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.2px;
+}
+
+.pill-tag {
+  color: #f87171;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.gallery-empty {
   width: 100vw;
   height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.85);
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 16px;
+  background: rgba(10, 10, 12, 0.85);
+  color: rgba(255, 255, 255, 0.6);
+  gap: 16px;
+  font-size: 15px;
+}
+
+.gallery-settings-link {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  padding: 8px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.gallery-settings-link:hover {
+  background: rgba(255, 255, 255, 0.18);
 }
