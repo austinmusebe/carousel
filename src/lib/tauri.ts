@@ -40,3 +40,21 @@ export async function quitApp(): Promise<void> {
   return invoke('quit_app');
 }
 
+export async function logImageSwitch(
+  from: string,
+  to: string,
+  switchMs: number,
+  width: number,
+  height: number,
+  fileSize: number
+): Promise<void> {
+  return invoke('log_image_switch', {
+    from,
+    to,
+    switchMs,
+    width,
+    height,
+    fileSize,
+  });
+}
+

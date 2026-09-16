@@ -6,7 +6,6 @@ import './SettingsScreen.css';
 const SHORTCUT_PRESETS = [
   'Alt+W',
   'Ctrl+Alt+W',
-  'Win+W',
   'Alt+Space',
   'Ctrl+Shift+W',
 ];
@@ -40,7 +39,6 @@ export default function SettingsScreen() {
         title: 'Select Wallpaper Directory',
         defaultPath: directory || undefined,
       });
-
       if (selected && typeof selected === 'string') {
         setDirectory(selected);
       }
@@ -54,13 +52,15 @@ export default function SettingsScreen() {
     setSaving(true);
     setStatusMessage(null);
     setIsError(false);
-
     try {
       await saveSettings(shortcut, directory);
-      setStatusMessage('Settings saved and shortcut re-registered!');
+      setStatusMessage('Settings saved successfully');
       setIsError(false);
+      setTimeout(() => {
+        setStatusMessage(null);
+      }, 3000);
     } catch (err) {
-      setStatusMessage(`Error saving settings: ${err}`);
+      setStatusMessage(`${err}`);
       setIsError(true);
     } finally {
       setSaving(false);
@@ -69,87 +69,105 @@ export default function SettingsScreen() {
 
   if (loading) {
     return (
-      <div className="settings-loading">
-        <div className="settings-spinner" />
+      <div className="settings-page">
+        <div className="settings-spinner-box">
+          <div className="settings-spinner" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="settings-container">
-      <header className="settings-header">
-        <h1>Carousel Settings</h1>
-        <p className="settings-subtitle">Manage wallpaper folder & global shortcut</p>
-      </header>
-
-      <div className="settings-section">
-        <label className="settings-label">Wallpaper Directory</label>
-        <div className="settings-input-group">
-          <input
-            type="text"
-            className="settings-input"
-            value={directory}
-            onChange={(e) => setDirectory(e.target.value)}
-            placeholder="e.g. C:\Users\YourName\Pictures\Wallpapers"
-          />
-          <button className="settings-btn" onClick={handleBrowseFolder}>
-            Browse...
-          </button>
-        </div>
-      </div>
-
-      <div className="settings-section">
-        <label className="settings-label">Global Shortcut</label>
-        <input
-          type="text"
-          className="settings-input shortcut-field"
-          value={shortcut}
-          onChange={(e) => setShortcut(e.target.value)}
-          placeholder="e.g. Alt+W"
-        />
-        <div className="preset-group">
-          <span className="preset-label">Presets:</span>
-          {SHORTCUT_PRESETS.map((preset) => (
-            <button
-              key={preset}
-              className={`preset-btn ${shortcut.toLowerCase() === preset.toLowerCase() ? 'active' : ''}`}
-              onClick={() => setShortcut(preset)}
-            >
-              {preset}
-            </button>
-          ))}
-        </div>
-      </div>
-
+    <div className="settings-page">
+      {/* ShadCN Floating Toast */}
       {statusMessage && (
-        <div className={`settings-status ${isError ? 'error' : 'success'}`}>
-          {statusMessage}
+        <div className={`settings-toast ${isError ? 'toast-error' : 'toast-success'}`}>
+          <div className="toast-indicator" />
+          <span>{statusMessage}</span>
         </div>
       )}
 
-      <div className="settings-actions">
-        <button
-          className="settings-btn primary"
-          onClick={handleSave}
-          disabled={saving}
-        >
-          {saving ? 'Saving...' : 'Save & Apply'}
-        </button>
+      <div className="settings-content">
+        {/* Header */}
+        <header className="settings-header">
+          <h1 className="settings-title">Settings</h1>
+          <p className="settings-description">
+            Manage your wallpaper directory and global activation shortcut.
+          </p>
+        </header>
 
-        <button
-          className="settings-btn secondary"
-          onClick={() => toggleMainWindow()}
-        >
-          Launch Picker
-        </button>
+        <div className="settings-divider" />
 
-        <button
-          className="settings-btn danger"
-          onClick={() => quitApp()}
-        >
+        {/* Section: Directory */}
+        <section className="settings-section">
+          <div className="section-meta">
+            <label className="section-label">Wallpaper Directory</label>
+            <p className="section-hint">Choose the folder that contains your desktop backgrounds.</p>
+          </div>
+          <div className="input-group">
+            <input
+              type="text"
+              className="text-input"
+              value={directory}
+              onChange={(e) => setDirectory(e.target.value)}
+              placeholder="No directory selected..."
+              spellCheck={false}
+            />
+            <button className="btn btn-outline" onClick={handleBrowseFolder}>
+              Browse
+            </button>
+          </div>
+        </section>
+
+        {/* Section: Shortcut */}
+        <section className="settings-section">
+          <div className="section-meta">
+            <label className="section-label">Global Shortcut</label>
+            <p className="section-hint">The keyboard shortcut to toggle the wallpaper picker overlay.</p>
+          </div>
+          <input
+            type="text"
+            className="text-input shortcut-input"
+            value={shortcut}
+            onChange={(e) => setShortcut(e.target.value)}
+            placeholder="e.g. Alt+W"
+            spellCheck={false}
+          />
+          <div className="presets-row">
+            <span className="presets-caption">Presets:</span>
+            {SHORTCUT_PRESETS.map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                className={`preset-chip ${shortcut.toLowerCase() === preset.toLowerCase() ? 'active' : ''}`}
+                onClick={() => setShortcut(preset)}
+              >
+                {preset}
+              </button>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      {/* Footer */}
+      <footer className="settings-footer">
+        <button className="btn btn-ghost btn-danger" onClick={() => quitApp()}>
           Quit App
         </button>
-      </div>
+
+        <div className="footer-actions">
+          <button className="btn btn-outline" onClick={() => toggleMainWindow()}>
+            Open Picker
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={handleSave}
+            disabled={saving}
+          >
+            {saving ? 'Saving…' : 'Save changes'}
+          </button>
+        </div>
+      </footer>
     </div>
   );
 }

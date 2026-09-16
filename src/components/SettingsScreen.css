@@ -1,199 +1,303 @@
-.settings-container {
+/* Notion & ShadCN Clean Dark UI */
+
+.settings-page {
   width: 100vw;
   height: 100vh;
-  background: #141417;
-  color: #f0f0f2;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  padding: 24px 28px;
+  background: #09090b;
+  color: #f4f4f5;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', system-ui, sans-serif;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
   user-select: none;
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+  overflow: hidden;
 }
 
+/* Content */
+.settings-content {
+  flex: 1;
+  padding: 32px 36px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  overflow-y: auto;
+}
+
+/* Header */
 .settings-header {
-  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.settings-header h1 {
+.settings-title {
   font-size: 20px;
   font-weight: 600;
-  margin: 0 0 4px 0;
-  color: #ffffff;
+  color: #f4f4f5;
+  margin: 0;
+  letter-spacing: -0.025em;
 }
 
-.settings-subtitle {
+.settings-description {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.5);
+  color: #71717a;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.settings-divider {
+  height: 1px;
+  background: #27272a;
+  width: 100%;
+}
+
+/* Sections */
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.section-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.section-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #f4f4f5;
+}
+
+.section-hint {
+  font-size: 12px;
+  color: #71717a;
   margin: 0;
 }
 
-.settings-section {
-  margin-bottom: 20px;
-}
-
-.settings-label {
-  display: block;
-  font-size: 13px;
-  font-weight: 500;
-  margin-bottom: 8px;
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.settings-input-group {
+/* Inputs */
+.input-group {
   display: flex;
-  gap: 10px;
+  gap: 8px;
+  align-items: center;
 }
 
-.settings-input {
+.text-input {
   flex: 1;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  padding: 8px 12px;
-  color: #ffffff;
+  height: 36px;
+  background: transparent;
+  border: 1px solid #27272a;
+  border-radius: 6px;
+  padding: 0 12px;
+  color: #f4f4f5;
   font-size: 13px;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
 }
 
-.settings-input:focus {
-  border-color: #3b82f6;
-  background: rgba(255, 255, 255, 0.1);
+.text-input::placeholder {
+  color: #3f3f46;
 }
 
-.settings-input.shortcut-field {
-  max-width: 240px;
-  font-family: 'Consolas', 'Cascadia Code', monospace;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+.text-input:focus {
+  border-color: #a1a1aa;
+  box-shadow: 0 0 0 1px #a1a1aa;
 }
 
-.preset-group {
+.shortcut-input {
+  max-width: 180px;
+  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+/* Preset Chips (ShadCN badges / Notion tags) */
+.presets-row {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 10px;
   flex-wrap: wrap;
+  margin-top: 2px;
 }
 
-.preset-label {
+.presets-caption {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
-  margin-right: 4px;
+  color: #71717a;
+  margin-right: 2px;
 }
 
-.preset-btn {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+.preset-chip {
+  height: 26px;
+  padding: 0 9px;
+  background: #18181b;
+  border: 1px solid #27272a;
   border-radius: 6px;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 12px;
-  padding: 4px 10px;
+  color: #a1a1aa;
+  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 11px;
   cursor: pointer;
-  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
 }
 
-.preset-btn:hover {
-  background: rgba(255, 255, 255, 0.16);
+.preset-chip:hover {
+  background: #27272a;
+  color: #f4f4f5;
+  border-color: #3f3f46;
+}
+
+.preset-chip.active {
+  background: #27272a;
+  border-color: #52525b;
   color: #ffffff;
+  font-weight: 600;
 }
 
-.preset-btn.active {
-  background: #2563eb;
-  border-color: #3b82f6;
-  color: #ffffff;
-}
-
-.settings-status {
-  padding: 10px 14px;
-  border-radius: 8px;
-  font-size: 13px;
-  margin-bottom: 16px;
-}
-
-.settings-status.success {
-  background: rgba(34, 197, 94, 0.15);
-  border: 1px solid rgba(34, 197, 94, 0.3);
-  color: #4ade80;
-}
-
-.settings-status.error {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #f87171;
-}
-
-.settings-actions {
-  margin-top: auto;
-  display: flex;
-  gap: 10px;
-}
-
-.settings-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  color: #ffffff;
-  padding: 9px 16px;
+/* Buttons (ShadCN Button Variants) */
+.btn {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 6px;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  outline: none;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
 }
 
-.settings-btn:hover {
-  background: rgba(255, 255, 255, 0.18);
-}
-
-.settings-btn:active {
+.btn:active {
   transform: scale(0.98);
 }
 
-.settings-btn:disabled {
+.btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.settings-btn.primary {
-  background: #2563eb;
-  border-color: #3b82f6;
+.btn-primary {
+  background: #fafafa;
+  color: #09090b;
+  border: 1px solid #fafafa;
 }
 
-.settings-btn.primary:hover {
-  background: #1d4ed8;
+.btn-primary:hover:not(:disabled) {
+  background: #e4e4e7;
+  border-color: #e4e4e7;
 }
 
-.settings-btn.secondary {
-  background: rgba(255, 255, 255, 0.08);
+.btn-outline {
+  background: transparent;
+  border: 1px solid #27272a;
+  color: #f4f4f5;
 }
 
-.settings-btn.danger {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.3);
-  color: #fca5a5;
-  margin-left: auto;
+.btn-outline:hover {
+  background: #18181b;
+  border-color: #3f3f46;
 }
 
-.settings-btn.danger:hover {
-  background: rgba(239, 68, 68, 0.3);
-  color: #ffffff;
+.btn-ghost {
+  background: transparent;
+  border: 1px solid transparent;
 }
 
-.settings-loading {
-  width: 100vw;
-  height: 100vh;
-  background: #141417;
+.btn-danger {
+  color: #71717a;
+}
+
+.btn-danger:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Footer */
+.settings-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 36px;
+  border-top: 1px solid #27272a;
+  background: #09090b;
+}
+
+.footer-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ShadCN Toast Notification */
+.settings-toast {
+  position: absolute;
+  top: 16px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #f4f4f5;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  animation: toast-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.toast-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+.settings-toast.toast-error .toast-indicator {
+  background: #ef4444;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Loading */
+.settings-spinner-box {
   display: flex;
   align-items: center;
   justify-content: center;
+  height: 100%;
 }
 
 .settings-spinner {
-  width: 28px;
-  height: 28px;
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  border-top-color: #3b82f6;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #27272a;
+  border-top-color: #fafafa;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }

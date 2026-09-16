@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { convertFileSrc, openSettingsWindow } from '../lib/tauri';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { convertFileSrc, openSettingsWindow, logImageSwitch } from '../lib/tauri';
 import type { WallpaperEntry } from '../types';
 import './Coverflow.css';
 
@@ -8,25 +8,102 @@ interface CoverflowProps {
   onSetWallpaper: (entry: WallpaperEntry) => void;
 }
 
+const VISIBLE_RADIUS = 6;
+const STRIP_WIDTH = 64; // px
+const GAP = 10; // px
+
 export default function Coverflow({ images, onSetWallpaper }: CoverflowProps) {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const trackRef = useRef<HTMLDivElement>(null);
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [virtualIndex, setVirtualIndex] = useState(0);
+  const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
+  const [loadedHighResMap, setLoadedHighResMap] = useState<Record<string, boolean>>({});
 
   const count = images.length;
 
-  // Safe navigation
-  const nextSlide = useCallback(() => {
+  // Track window resize to ensure exact pixel centering
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Compute active card width: ~58% of viewport, clamped between 520px and 780px
+  const centerWidth = useMemo(() => {
+    return Math.min(Math.max(viewportWidth * 0.58, 520), 780);
+  }, [viewportWidth]);
+
+  // Actual index in images array
+  const activeActualIndex = count > 0 ? ((virtualIndex % count) + count) % count : 0;
+
+  // Timing and logging refs
+  const switchStartRef = useRef<number>(performance.now());
+  const prevIndexRef = useRef<number>(activeActualIndex);
+  const preloadedUrls = useRef<Set<string>>(new Set());
+
+  // Debounce high-res loading by 60ms to eliminate lag during rapid arrow / wheel scrolling
+  const [debouncedIndex, setDebouncedIndex] = useState(activeActualIndex);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedIndex(activeActualIndex);
+    }, 60);
+    return () => clearTimeout(timer);
+  }, [activeActualIndex]);
+
+  // Log image-to-image switch latency
+  useEffect(() => {
+    const prevIdx = prevIndexRef.current;
+    if (count > 0 && prevIdx !== activeActualIndex) {
+      const latency = performance.now() - switchStartRef.current;
+      const prevImg = images[prevIdx];
+      const currImg = images[activeActualIndex];
+
+      if (prevImg && currImg) {
+        console.log(
+          `[Switch] "${prevImg.filename}" -> "${currImg.filename}" (${latency.toFixed(1)}ms) | ${currImg.width}x${currImg.height} | ${(currImg.file_size / (1024 * 1024)).toFixed(2)} MB`
+        );
+        logImageSwitch(
+          prevImg.filename,
+          currImg.filename,
+          latency,
+          currImg.width,
+          currImg.height,
+          currImg.file_size
+        ).catch(() => {});
+      }
+      prevIndexRef.current = activeActualIndex;
+    }
+  }, [activeActualIndex, count, images]);
+
+  // Preload adjacent high-res images (±1, ±2) off-thread
+  useEffect(() => {
     if (count === 0) return;
-    setActiveIndex((prev) => (prev + 1) % count);
+    const offsets = [1, -1, 2, -2];
+    offsets.forEach((offset) => {
+      const idx = ((activeActualIndex + offset) % count + count) % count;
+      const target = images[idx];
+      if (target && !preloadedUrls.current.has(target.path)) {
+        preloadedUrls.current.add(target.path);
+        const img = new Image();
+        img.decoding = 'async';
+        img.src = convertFileSrc(target.path);
+      }
+    });
+  }, [activeActualIndex, count, images]);
+
+  const handleHighResLoaded = useCallback((path: string, filename: string) => {
+    setLoadedHighResMap((prev) => (prev[path] ? prev : { ...prev, [path]: true }));
+    console.log(`[Asset] High-res rendered: ${filename}`);
+  }, []);
+
+  const triggerNavigation = useCallback((direction: 1 | -1) => {
+    if (count === 0) return;
+    switchStartRef.current = performance.now();
+    setVirtualIndex((prev) => prev + direction);
   }, [count]);
 
-  const prevSlide = useCallback(() => {
-    if (count === 0) return;
-    setActiveIndex((prev) => (prev - 1 + count) % count);
-  }, [count]);
+  const nextSlide = useCallback(() => triggerNavigation(1), [triggerNavigation]);
+  const prevSlide = useCallback(() => triggerNavigation(-1), [triggerNavigation]);
 
-  // Handle keyboard navigation
+  // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'l') {
@@ -53,29 +130,23 @@ export default function Coverflow({ images, onSetWallpaper }: CoverflowProps) {
     }
   }, [nextSlide, prevSlide]);
 
-  // Listen for Enter key dispatched from App
+  // Enter key trigger
   useEffect(() => {
     const handleSetActive = () => {
-      if (images[activeIndex]) {
-        onSetWallpaper(images[activeIndex]);
+      if (images[activeActualIndex]) {
+        onSetWallpaper(images[activeActualIndex]);
       }
     };
     window.addEventListener('set-active-wallpaper', handleSetActive);
     return () => window.removeEventListener('set-active-wallpaper', handleSetActive);
-  }, [activeIndex, images, onSetWallpaper]);
+  }, [activeActualIndex, images, onSetWallpaper]);
 
-  // Center active item in viewport
-  useEffect(() => {
-    const activeEl = itemRefs.current[activeIndex];
-    const trackEl = trackRef.current;
-    if (activeEl && trackEl) {
-      // Calculate how much we need to offset the track so activeEl center matches window center
-      const activeCenter = activeEl.offsetLeft + activeEl.offsetWidth / 2;
-      const viewportCenter = window.innerWidth / 2;
-      const targetTranslate = viewportCenter - activeCenter;
-      trackEl.style.transform = `translateX(${targetTranslate}px)`;
-    }
-  }, [activeIndex, images]);
+  const formatFileSize = (bytes: number): string => {
+    if (!bytes || bytes === 0) return '0 B';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
 
   if (count === 0) {
     return (
@@ -88,46 +159,101 @@ export default function Coverflow({ images, onSetWallpaper }: CoverflowProps) {
     );
   }
 
-  const activeImage = images[activeIndex];
-  const fileExt = activeImage.filename.split('.').pop()?.toUpperCase() || 'IMG';
+  // Generate the window of virtual items around virtualIndex
+  const slots = [];
+  for (let offset = -VISIBLE_RADIUS; offset <= VISIBLE_RADIUS; offset++) {
+    const vIndex = virtualIndex + offset;
+    const actualIdx = ((vIndex % count) + count) % count;
+    const img = images[actualIdx];
+
+    let xOffset = 0;
+    let cardWidth = STRIP_WIDTH;
+
+    if (offset === 0) {
+      xOffset = 0;
+      cardWidth = centerWidth;
+    } else if (offset > 0) {
+      xOffset = centerWidth / 2 + GAP + (offset - 1) * (STRIP_WIDTH + GAP) + STRIP_WIDTH / 2;
+    } else {
+      const absOffset = Math.abs(offset);
+      xOffset = -(centerWidth / 2 + GAP + (absOffset - 1) * (STRIP_WIDTH + GAP) + STRIP_WIDTH / 2);
+    }
+
+    slots.push({
+      vIndex,
+      actualIdx,
+      offset,
+      img,
+      xOffset,
+      cardWidth,
+      isActive: offset === 0,
+      shouldLoadHighRes: offset === 0 && debouncedIndex === actualIdx,
+    });
+  }
 
   return (
     <div className="gallery-viewport" onWheel={handleWheel}>
-      <button
-        className="gallery-settings-btn"
-        title="Settings"
-        onClick={() => openSettingsWindow()}
-      >
-        ⚙️
-      </button>
-
-      <div className="gallery-track" ref={trackRef}>
-        {images.map((img, idx) => {
-          const isActive = idx === activeIndex;
+      <div className="gallery-stage">
+        {slots.map((slot) => {
+          const fileExt = slot.img.filename.split('.').pop()?.toUpperCase() || 'IMG';
+          const isHighResReady = loadedHighResMap[slot.img.path];
 
           return (
             <div
-              key={img.path}
-              ref={(el) => { itemRefs.current[idx] = el; }}
-              className={`gallery-card ${isActive ? 'active' : 'inactive'}`}
-              onClick={() => setActiveIndex(idx)}
-              onDoubleClick={() => onSetWallpaper(img)}
-            >
-              <img
-                src={
-                  isActive
-                    ? convertFileSrc(img.path)
-                    : `data:image/png;base64,${img.thumbnail}`
+              key={slot.vIndex}
+              className={`gallery-slot ${slot.isActive ? 'active' : 'inactive'}`}
+              style={{
+                width: `${slot.cardWidth}px`,
+                transform: `translate3d(calc(-50% + ${slot.xOffset}px), -50%, 0)`,
+                zIndex: slot.isActive ? 30 : 20 - Math.abs(slot.offset),
+              }}
+              onClick={() => {
+                if (!slot.isActive) {
+                  switchStartRef.current = performance.now();
+                  setVirtualIndex(slot.vIndex);
                 }
-                alt={img.filename}
-                className="gallery-image"
+              }}
+              onDoubleClick={() => onSetWallpaper(slot.img)}
+            >
+              {/* Layer 1: Instant RAM thumbnail (always displayed, 0ms latency) */}
+              <img
+                src={`data:image/jpeg;base64,${slot.img.thumbnail}`}
+                alt={slot.img.filename}
+                className="gallery-image thumb-layer"
                 draggable={false}
               />
 
-              {isActive && (
+              {/* Layer 2: High-res image (debounced off-thread load, overlays smoothly) */}
+              {slot.shouldLoadHighRes && (
+                <img
+                  src={convertFileSrc(slot.img.path)}
+                  alt={slot.img.filename}
+                  className={`gallery-image full-layer ${isHighResReady ? 'is-loaded' : ''}`}
+                  draggable={false}
+                  decoding="async"
+                  onLoad={() => handleHighResLoaded(slot.img.path, slot.img.filename)}
+                />
+              )}
+
+              {/* Bottom-left Pill: Filename, Resolution & File Size */}
+              {slot.isActive && (
                 <div className="gallery-pill">
-                  <span className="pill-name">{img.filename}</span>
-                  <span className="pill-tag">{fileExt}</span>
+                  <div className="pill-top">
+                    <span className="pill-resolution">
+                      {slot.img.width > 0 && slot.img.height > 0
+                        ? `${slot.img.width} × ${slot.img.height}`
+                        : 'Image'}
+                    </span>
+                    <span className="pill-filesize">
+                      {formatFileSize(slot.img.file_size)}
+                    </span>
+                  </div>
+                  <div className="pill-bottom">
+                    <span className="pill-name" title={slot.img.filename}>
+                      {slot.img.filename}
+                    </span>
+                    <span className="pill-tag">{fileExt}</span>
+                  </div>
                 </div>
               )}
             </div>

@@ -151,6 +151,15 @@ fn set_prevent_hide(state: tauri::State<'_, AppState>, prevent: bool) {
     state.prevent_hide.store(prevent, Ordering::SeqCst);
 }
 
+#[tauri::command]
+fn log_image_switch(from: String, to: String, switch_ms: f64, width: u32, height: u32, file_size: u64) {
+    let mb = file_size as f64 / (1024.0 * 1024.0);
+    println!(
+        "[Switch] \"{}\" -> \"{}\" | latency: {:.1}ms | res: {}x{} | size: {:.2} MB",
+        from, to, switch_ms, width, height, mb
+    );
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -301,6 +310,7 @@ pub fn run() {
             open_settings_window,
             quit_app,
             set_prevent_hide,
+            log_image_switch,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

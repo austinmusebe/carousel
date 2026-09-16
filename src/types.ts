@@ -1,7 +1,10 @@
 export interface WallpaperEntry {
   filename: string;
   path: string;
-  thumbnail: string; // base64-encoded PNG, no data: prefix
+  thumbnail: string; // base64-encoded JPEG, no data: prefix
+  width: number;
+  height: number;
+  file_size: number; // bytes
 }
 
 export interface AppConfig {
