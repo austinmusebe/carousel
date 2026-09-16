@@ -114,6 +114,7 @@
   font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.3px;
+  padding: 10px;
 }
 
 /* Preset Chips (ShadCN badges / Notion tags) */
@@ -273,6 +274,7 @@
     opacity: 0;
     transform: translateY(-4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
