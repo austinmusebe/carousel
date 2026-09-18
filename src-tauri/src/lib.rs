@@ -95,15 +95,50 @@ fn set_wallpaper_directory(
 }
 
 #[tauri::command]
+fn is_autostart_enabled(app: tauri::AppHandle) -> Result<bool, String> {
+    use tauri_plugin_autostart::ManagerExt;
+    app.autolaunch().is_enabled().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn set_autostart(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, AppState>,
+    enabled: bool,
+) -> Result<(), String> {
+    use tauri_plugin_autostart::ManagerExt;
+    if enabled {
+        app.autolaunch().enable().map_err(|e| e.to_string())?;
+    } else {
+        app.autolaunch().disable().map_err(|e| e.to_string())?;
+    }
+    let mut config = state.config.lock().map_err(|e| e.to_string())?;
+    config.autostart = enabled;
+    config.autostart_prompted = true;
+    config.save(&app);
+    Ok(())
+}
+
+#[tauri::command]
 fn save_settings(
     app: tauri::AppHandle,
     state: tauri::State<'_, AppState>,
     shortcut: String,
     directory: String,
+    autostart: bool,
 ) -> Result<(), String> {
+    use tauri_plugin_autostart::ManagerExt;
+    if autostart {
+        let _ = app.autolaunch().enable();
+    } else {
+        let _ = app.autolaunch().disable();
+    }
+
     let mut config = state.config.lock().map_err(|e| e.to_string())?;
     config.shortcut = shortcut.trim().to_string();
     config.wallpaper_directory = directory.clone();
+    config.autostart = autostart;
+    config.autostart_prompted = true;
     config.save(&app);
 
     // Extend asset protocol scope
@@ -164,6 +199,10 @@ fn log_image_switch(from: String, to: String, switch_ms: f64, width: u32, height
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            None,
+        ))
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(move |app_handle, _shortcut, event| {
@@ -179,6 +218,7 @@ pub fn run() {
             let shortcut_str = config.shortcut.clone();
             let wallpaper_dir = config.wallpaper_directory.clone();
             let has_valid_dir = config.has_valid_directory();
+            let needs_first_launch_prompt = !config.autostart_prompted;
 
             // Store config in app state
             app.manage(AppState {
@@ -196,8 +236,8 @@ pub fn run() {
                 }
             }
 
-            // If no valid directory configured, show window immediately for first-run setup
-            if !has_valid_dir {
+            // If no valid directory configured or first launch, show window immediately
+            if !has_valid_dir || needs_first_launch_prompt {
                 if let Some(window) = app.get_webview_window("main") {
                     let _ = window.show();
                     let _ = window.center();
@@ -306,6 +346,8 @@ pub fn run() {
             get_config,
             set_wallpaper_directory,
             save_settings,
+            is_autostart_enabled,
+            set_autostart,
             toggle_main_window,
             open_settings_window,
             quit_app,

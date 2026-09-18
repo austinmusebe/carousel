@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
-import { getConfig, saveSettings, toggleMainWindow, quitApp } from '../lib/tauri';
+import { getConfig, saveSettings, isAutostartEnabled, toggleMainWindow, quitApp } from '../lib/tauri';
 import './SettingsScreen.css';
 
 const SHORTCUT_PRESETS = [
@@ -13,6 +13,7 @@ const SHORTCUT_PRESETS = [
 export default function SettingsScreen() {
   const [directory, setDirectory] = useState('');
   const [shortcut, setShortcut] = useState('Alt+W');
+  const [autostart, setAutostart] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -20,9 +21,15 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     getConfig()
-      .then((cfg) => {
+      .then(async (cfg) => {
         setDirectory(cfg.wallpaper_directory || '');
         setShortcut(cfg.shortcut || 'Alt+W');
+        try {
+          const enabled = await isAutostartEnabled();
+          setAutostart(enabled);
+        } catch {
+          setAutostart(cfg.autostart ?? false);
+        }
       })
       .catch((err) => {
         setStatusMessage(`Failed to load config: ${err}`);
@@ -53,7 +60,7 @@ export default function SettingsScreen() {
     setStatusMessage(null);
     setIsError(false);
     try {
-      await saveSettings(shortcut, directory);
+      await saveSettings(shortcut, directory, autostart);
       setStatusMessage('Settings saved successfully');
       setIsError(false);
       setTimeout(() => {
@@ -146,6 +153,31 @@ export default function SettingsScreen() {
               </button>
             ))}
           </div>
+        </section>
+
+        {/* Section: Startup */}
+        <section className="settings-section">
+          <div className="section-meta">
+            <label className="section-label">Start with Windows</label>
+            <p className="section-hint">
+              Automatically launch Carousel in the background when you log into Windows.
+            </p>
+          </div>
+          <label className="switch-row">
+            <div className="switch-wrapper">
+              <input
+                type="checkbox"
+                className="switch-input"
+                id="autostart-toggle"
+                checked={autostart}
+                onChange={(e) => setAutostart(e.target.checked)}
+              />
+              <span className="switch-track" />
+            </div>
+            <span className="switch-label-text">
+              {autostart ? 'Launch on startup (enabled)' : 'Launch on startup (disabled)'}
+            </span>
+          </label>
         </section>
       </div>
 

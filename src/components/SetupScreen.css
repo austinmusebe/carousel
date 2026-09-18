@@ -65,6 +65,43 @@
   cursor: not-allowed;
 }
 
+.setup-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.setup-button-primary {
+  background: #ffffff;
+  color: #09090b;
+  border: 1px solid #ffffff;
+  font-weight: 600;
+}
+
+.setup-button-primary:hover:not(:disabled) {
+  background: #e4e4e7;
+  border-color: #e4e4e7;
+}
+
+.setup-button-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.setup-button-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.setup-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 18px;
+  margin-bottom: 0;
+}
+
 .setup-error {
   color: #ff6b6b;
   font-size: 13px;

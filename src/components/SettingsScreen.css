@@ -303,3 +303,71 @@
     transform: rotate(360deg);
   }
 }
+
+/* Switch Toggle (ShadCN style) */
+.switch-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+  width: fit-content;
+  margin-top: 4px;
+}
+
+.switch-wrapper {
+  position: relative;
+  width: 40px;
+  height: 22px;
+}
+
+.switch-input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.switch-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #27272a;
+  border: 1px solid #3f3f46;
+  border-radius: 20px;
+  transition: all 0.2s ease;
+}
+
+.switch-track::before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: #a1a1aa;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.switch-input:checked + .switch-track {
+  background-color: #fafafa;
+  border-color: #fafafa;
+}
+
+.switch-input:checked + .switch-track::before {
+  transform: translateX(18px);
+  background-color: #09090b;
+}
+
+.switch-input:focus-visible + .switch-track {
+  box-shadow: 0 0 0 2px #a1a1aa;
+}
+
+.switch-label-text {
+  font-size: 13px;
+  color: #d4d4d8;
+  font-weight: 500;
+}

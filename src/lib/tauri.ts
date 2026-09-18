@@ -24,8 +24,20 @@ export async function setPreventHide(prevent: boolean): Promise<void> {
   return invoke('set_prevent_hide', { prevent });
 }
 
-export async function saveSettings(shortcut: string, directory: string): Promise<void> {
-  return invoke('save_settings', { shortcut, directory });
+export async function saveSettings(
+  shortcut: string,
+  directory: string,
+  autostart: boolean
+): Promise<void> {
+  return invoke('save_settings', { shortcut, directory, autostart });
+}
+
+export async function isAutostartEnabled(): Promise<boolean> {
+  return invoke<boolean>('is_autostart_enabled');
+}
+
+export async function setAutostart(enabled: boolean): Promise<void> {
+  return invoke('set_autostart', { enabled });
 }
 
 export async function toggleMainWindow(): Promise<void> {

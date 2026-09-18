@@ -7,6 +7,10 @@ use tauri::{AppHandle, Manager};
 pub struct AppConfig {
     pub shortcut: String,
     pub wallpaper_directory: String,
+    #[serde(default)]
+    pub autostart: bool,
+    #[serde(default)]
+    pub autostart_prompted: bool,
 }
 
 impl Default for AppConfig {
@@ -14,6 +18,8 @@ impl Default for AppConfig {
         Self {
             shortcut: "Alt+W".to_string(),
             wallpaper_directory: String::new(),
+            autostart: false,
+            autostart_prompted: false,
         }
     }
 }

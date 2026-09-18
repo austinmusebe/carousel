@@ -10,4 +10,6 @@ export interface WallpaperEntry {
 export interface AppConfig {
   shortcut: string;
   wallpaper_directory: string;
+  autostart?: boolean;
+  autostart_prompted?: boolean;
 }

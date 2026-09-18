@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import SetupScreen from './components/SetupScreen';
 import SettingsScreen from './components/SettingsScreen';
+import AutostartPromptModal from './components/AutostartPromptModal';
 import Coverflow from './components/Coverflow';
 import { useWallpapers } from './hooks/useWallpapers';
 import { useKeyboardActions } from './hooks/useKeyboardActions';
@@ -15,6 +16,7 @@ export default function App() {
   }
 
   const [hasDirectory, setHasDirectory] = useState<boolean | null>(null);
+  const [showAutostartPrompt, setShowAutostartPrompt] = useState(false);
   const { images, loading, error, refresh } = useWallpapers();
 
   // Check config on mount
@@ -25,6 +27,9 @@ export default function App() {
           config.wallpaper_directory !== '' &&
           config.wallpaper_directory !== null;
         setHasDirectory(valid);
+        if (valid && !config.autostart_prompted) {
+          setShowAutostartPrompt(true);
+        }
       })
       .catch(() => setHasDirectory(false));
   }, []);
@@ -45,13 +50,14 @@ export default function App() {
 
   // Get current active entry for Enter key
   const handleEnterKey = useCallback(() => {
+    if (showAutostartPrompt) return;
     // We need the currently active swiper index. 
     // The Coverflow component manages this internally.
     // We'll use a ref approach — for now, the Enter key
     // triggers the wallpaper set for the active slide.
     // This is handled by dispatching a custom event that Coverflow listens to.
     window.dispatchEvent(new CustomEvent('set-active-wallpaper'));
-  }, []);
+  }, [showAutostartPrompt]);
 
   useKeyboardActions(handleEnterKey);
 
@@ -84,5 +90,12 @@ export default function App() {
     );
   }
 
-  return <Coverflow images={images} onSetWallpaper={handleSetWallpaper} />;
+  return (
+    <>
+      {showAutostartPrompt && (
+        <AutostartPromptModal onDone={() => setShowAutostartPrompt(false)} />
+      )}
+      <Coverflow images={images} onSetWallpaper={handleSetWallpaper} />
+    </>
+  );
 }
