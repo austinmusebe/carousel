@@ -85,17 +85,25 @@ export default function App() {
     return (
       <div className="app-error">
         <p>Error: {error}</p>
-        <button onClick={refresh}>Retry</button>
+        <button onClick={() => refresh()}>Retry</button>
       </div>
     );
   }
+
+  const handleRefresh = useCallback(() => {
+    return refresh(true);
+  }, [refresh]);
 
   return (
     <>
       {showAutostartPrompt && (
         <AutostartPromptModal onDone={() => setShowAutostartPrompt(false)} />
       )}
-      <Coverflow images={images} onSetWallpaper={handleSetWallpaper} />
+      <Coverflow
+        images={images}
+        onSetWallpaper={handleSetWallpaper}
+        onRefresh={handleRefresh}
+      />
     </>
   );
 }

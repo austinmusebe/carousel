@@ -90,6 +90,7 @@ To create a release:
 
 - Press `Left Arrow` or `h` to show the previous image.
 - Press `Right Arrow` or `l` to show the next image.
+- Press `r` or `R` to reload the directory and check for new images.
 - Turn the mouse wheel to scroll through images.
 - Click an inactive card to center that image.
 
@@ -125,7 +126,12 @@ Open the Settings window from the system tray menu.
 2. Alternatively, enter a custom key combination in the input field.
 3. Click `Save changes` to apply the new shortcut.
 
-### 6.3 Configuration Storage
+### 6.3 Reload Directory Shortcut
+
+Press `R` while the wallpaper gallery is open to check for newly added or removed images.
+This shortcut is built into the application and cannot be changed.
+
+### 6.4 Configuration Storage
 
 The application saves settings in a JSON file at this location:
 

@@ -5,18 +5,26 @@ import type { WallpaperEntry } from '../types';
 export function useWallpapers() {
   const [images, setImages] = useState<WallpaperEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
+  const refresh = useCallback(async (silent = false): Promise<WallpaperEntry[] | null> => {
+    if (silent) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     setError(null);
     try {
       const result = await scanWallpapers();
       setImages(result);
+      return result;
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
+      return null;
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
@@ -24,5 +32,5 @@ export function useWallpapers() {
     refresh();
   }, [refresh]);
 
-  return { images, loading, error, refresh };
+  return { images, loading, refreshing, error, refresh };
 }

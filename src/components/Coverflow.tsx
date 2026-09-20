@@ -6,13 +6,14 @@ import './Coverflow.css';
 interface CoverflowProps {
   images: WallpaperEntry[];
   onSetWallpaper: (entry: WallpaperEntry) => void;
+  onRefresh?: () => Promise<WallpaperEntry[] | null> | Promise<void> | void;
 }
 
 const VISIBLE_RADIUS = 6;
 const STRIP_WIDTH = 64; // px
 const GAP = 10; // px
 
-export default function Coverflow({ images, onSetWallpaper }: CoverflowProps) {
+export default function Coverflow({ images, onSetWallpaper, onRefresh }: CoverflowProps) {
   const [virtualIndex, setVirtualIndex] = useState(0);
   const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
   const [loadedHighResMap, setLoadedHighResMap] = useState<Record<string, boolean>>({});
@@ -94,6 +95,37 @@ export default function Coverflow({ images, onSetWallpaper }: CoverflowProps) {
     console.log(`[Asset] High-res rendered: ${filename}`);
   }, []);
 
+  const [refreshNotification, setRefreshNotification] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    if (!onRefresh || isRefreshing) return;
+    setIsRefreshing(true);
+    setRefreshNotification('Checking for new images…');
+    try {
+      const activePath = images[activeActualIndex]?.path;
+      const result = await onRefresh();
+      if (Array.isArray(result)) {
+        if (activePath) {
+          const newIdx = result.findIndex((item) => item.path === activePath);
+          if (newIdx !== -1) {
+            setVirtualIndex(newIdx);
+          }
+        }
+        setRefreshNotification(`Library updated · ${result.length} wallpapers`);
+      } else {
+        setRefreshNotification('Library updated');
+      }
+    } catch {
+      setRefreshNotification('Failed to check for new images');
+    } finally {
+      setIsRefreshing(false);
+      setTimeout(() => {
+        setRefreshNotification(null);
+      }, 2000);
+    }
+  }, [onRefresh, isRefreshing, images, activeActualIndex]);
+
   const triggerNavigation = useCallback((direction: 1 | -1) => {
     if (count === 0) return;
     switchStartRef.current = performance.now();
@@ -112,12 +144,15 @@ export default function Coverflow({ images, onSetWallpaper }: CoverflowProps) {
       } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'h') {
         e.preventDefault();
         prevSlide();
+      } else if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        handleRefresh();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [nextSlide, prevSlide]);
+  }, [nextSlide, prevSlide, handleRefresh]);
 
   // Mouse wheel navigation
   const handleWheel = useCallback((e: React.WheelEvent) => {
@@ -193,6 +228,12 @@ export default function Coverflow({ images, onSetWallpaper }: CoverflowProps) {
 
   return (
     <div className="gallery-viewport" onWheel={handleWheel}>
+      {refreshNotification && (
+        <div className="gallery-toast">
+          <span className="gallery-toast-dot" />
+          <span>{refreshNotification}</span>
+        </div>
+      )}
       <div className="gallery-stage">
         {slots.map((slot) => {
           const fileExt = slot.img.filename.split('.').pop()?.toUpperCase() || 'IMG';

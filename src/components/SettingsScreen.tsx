@@ -155,6 +155,20 @@ export default function SettingsScreen() {
           </div>
         </section>
 
+        {/* Section: In-Gallery Refresh Shortcut (Non-modifiable) */}
+        <section className="settings-section">
+          <div className="section-meta">
+            <label className="section-label">Reload Directory Shortcut</label>
+            <p className="section-hint">
+              Check for new or modified images while the wallpaper carousel is open.
+            </p>
+          </div>
+          <div className="readonly-shortcut-row">
+            <kbd className="readonly-kbd">R</kbd>
+            <span className="readonly-shortcut-label">Fixed in-gallery shortcut</span>
+          </div>
+        </section>
+
         {/* Section: Startup */}
         <section className="settings-section">
           <div className="section-meta">

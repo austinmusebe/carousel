@@ -101,6 +101,12 @@ export default function SetupScreen({ onDirectorySet }: SetupScreenProps) {
           {loading ? 'Setting up...' : 'Choose Wallpaper Folder'}
         </button>
         {error && <p className="setup-error">{error}</p>}
+        <div className="setup-tip-box">
+          <span className="setup-tip-badge">Tip</span>
+          <span className="setup-tip-text">
+            Press <kbd className="setup-kbd">R</kbd> anytime while the carousel is open to check for new images in your folder.
+          </span>
+        </div>
       </div>
     </div>
   );
