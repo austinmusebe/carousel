@@ -70,3 +70,15 @@ export async function logImageSwitch(
   });
 }
 
+export async function logFrontend(
+  level: 'INFO' | 'WARN' | 'ERROR',
+  message: string
+): Promise<void> {
+  console.log(`[${level}] ${message}`);
+  try {
+    await invoke('log_frontend', { level, message });
+  } catch {
+    // Ignore logging errors if backend is not ready
+  }
+}
+

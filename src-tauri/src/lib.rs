@@ -1,8 +1,10 @@
 mod config;
+mod logger;
 mod scanner;
 mod wallpaper;
 
 use config::AppConfig;
+use logger::{app_error, app_info, app_warn};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem};
@@ -16,51 +18,121 @@ pub struct AppState {
     pub last_shown: Mutex<std::time::Instant>,
 }
 
+#[cfg(target_os = "windows")]
+fn strip_main_window_decorations(window: &tauri::WebviewWindow) {
+    use windows_sys::Win32::UI::WindowsAndMessaging::{
+        GetWindowLongPtrW, SetWindowLongPtrW, GWL_STYLE, WS_CAPTION, WS_SYSMENU,
+    };
+    if let Ok(hwnd) = window.hwnd() {
+        let hwnd_raw = hwnd.0 as windows_sys::Win32::Foundation::HWND;
+        unsafe {
+            let style = GetWindowLongPtrW(hwnd_raw, GWL_STYLE);
+            let new_style = style & !(WS_CAPTION as isize) & !(WS_SYSMENU as isize);
+            let res = SetWindowLongPtrW(hwnd_raw, GWL_STYLE, new_style);
+            app_info!("[Decorations] Stripped WS_CAPTION/WS_SYSMENU from HWND={:?}, prev_style={:#x}, new_style={:#x}, res={}", hwnd.0, style, new_style, res);
+        }
+    } else {
+        app_warn!("[Decorations] Could not get HWND for stripping decorations");
+    }
+}
+
 fn toggle_main_window_internal(app: &tauri::AppHandle) {
+    app_info!("[Toggle] toggle_main_window_internal called");
     if let Some(window) = app.get_webview_window("main") {
-        let is_vis = window.is_visible().unwrap_or(false);
+        let is_vis = match window.is_visible() {
+            Ok(v) => {
+                app_info!("[Toggle] Main window is_visible: {}", v);
+                v
+            }
+            Err(e) => {
+                app_error!("[Toggle] Failed to check is_visible: {}", e);
+                false
+            }
+        };
+
         if is_vis {
-            let _ = window.hide();
+            app_info!("[Toggle] Main window is currently visible -> hiding");
+            if let Err(e) = window.hide() {
+                app_error!("[Toggle] Failed window.hide(): {}", e);
+            } else {
+                app_info!("[Toggle] window.hide() called successfully");
+            }
         } else {
+            app_info!("[Toggle] Main window is currently hidden -> showing");
             let state = app.state::<AppState>();
             *state.last_shown.lock().unwrap() = std::time::Instant::now();
-            let _ = window.show();
-            let _ = window.unminimize();
-            let _ = window.center();
-            let _ = window.set_focus();
+            if let Err(e) = window.show() {
+                app_error!("[Toggle] Failed window.show(): {}", e);
+            } else {
+                app_info!("[Toggle] window.show() called successfully");
+            }
+            if let Err(e) = window.unminimize() {
+                app_warn!("[Toggle] Failed window.unminimize(): {}", e);
+            }
+            if let Err(e) = window.center() {
+                app_warn!("[Toggle] Failed window.center(): {}", e);
+            }
+            if let Err(e) = window.set_focus() {
+                app_warn!("[Toggle] Failed window.set_focus(): {}", e);
+            } else {
+                app_info!("[Toggle] window.set_focus() called successfully");
+            }
 
             #[cfg(target_os = "windows")]
             {
+                strip_main_window_decorations(&window);
                 if let Ok(hwnd) = window.hwnd() {
                     use windows_sys::Win32::UI::WindowsAndMessaging::{
                         BringWindowToTop, SetForegroundWindow,
                     };
                     unsafe {
-                        BringWindowToTop(hwnd.0 as _);
-                        SetForegroundWindow(hwnd.0 as _);
+                        let b_res = BringWindowToTop(hwnd.0 as _);
+                        let s_res = SetForegroundWindow(hwnd.0 as _);
+                        app_info!("[Toggle] Win32 BringWindowToTop={:?}, SetForegroundWindow={:?}", b_res != 0, s_res != 0);
                     }
                 }
             }
         }
+    } else {
+        app_error!("[Toggle] 'main' window not found!");
     }
 }
 
 fn open_settings_window_internal(app: &tauri::AppHandle) {
+    app_info!("[Settings] open_settings_window_internal called");
     if let Some(window) = app.get_webview_window("settings") {
-        let _ = window.show();
+        if let Err(e) = window.show() {
+            app_error!("[Settings] Failed window.show(): {}", e);
+        }
         let _ = window.unminimize();
         let _ = window.center();
         let _ = window.set_focus();
+        app_info!("[Settings] settings window shown and focused");
+    } else {
+        app_error!("[Settings] 'settings' window not found!");
     }
 }
 
 #[tauri::command]
+fn log_frontend(level: String, message: String) {
+    logger::log(&level, &format!("[Frontend] {}", message));
+}
+
+#[tauri::command]
 fn scan_wallpapers(state: tauri::State<'_, AppState>) -> Result<Vec<scanner::WallpaperEntry>, String> {
+    app_info!("[Command] scan_wallpapers called");
     let config = state.config.lock().map_err(|e| e.to_string())?;
     if !config.has_valid_directory() {
+        app_warn!("[Command] scan_wallpapers: invalid directory '{}'", config.wallpaper_directory);
         return Err("No valid wallpaper directory configured".to_string());
     }
-    scanner::scan_directory(&config.wallpaper_directory)
+    app_info!("[Command] scan_wallpapers scanning: '{}'", config.wallpaper_directory);
+    let res = scanner::scan_directory(&config.wallpaper_directory);
+    match &res {
+        Ok(entries) => app_info!("[Command] scan_wallpapers succeeded with {} images", entries.len()),
+        Err(e) => app_error!("[Command] scan_wallpapers failed: {}", e),
+    }
+    res
 }
 
 #[tauri::command]
@@ -205,7 +277,8 @@ pub fn run() {
         ))
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
-                .with_handler(move |app_handle, _shortcut, event| {
+                .with_handler(move |app_handle, shortcut, event| {
+                    app_info!("[Shortcut] Global shortcut event: {:?} for {:?}", event.state(), shortcut);
                     if event.state() == tauri_plugin_global_shortcut::ShortcutState::Pressed {
                         toggle_main_window_internal(app_handle);
                     }
@@ -213,12 +286,27 @@ pub fn run() {
                 .build(),
         )
         .setup(|app| {
+            let log_path = app
+                .path()
+                .app_config_dir()
+                .expect("failed to get app config dir")
+                .join("carousel.log");
+            logger::init(log_path);
+
+            app_info!("================================================");
+            app_info!("Carousel Wallpaper Changer starting up");
+            app_info!("================================================");
+
             // Load config
             let config = AppConfig::load(app.handle());
             let shortcut_str = config.shortcut.clone();
             let wallpaper_dir = config.wallpaper_directory.clone();
             let has_valid_dir = config.has_valid_directory();
             let needs_first_launch_prompt = !config.autostart_prompted;
+
+            app_info!("Config loaded: shortcut='{}', dir='{}', autostart={}, prompted={}",
+                shortcut_str, wallpaper_dir, config.autostart, config.autostart_prompted);
+            app_info!("Directory valid: {}, first_launch_prompt: {}", has_valid_dir, needs_first_launch_prompt);
 
             // Store config in app state
             app.manage(AppState {
@@ -232,34 +320,30 @@ pub fn run() {
                 let dir_path = std::path::Path::new(&wallpaper_dir);
                 if dir_path.is_dir() {
                     let scope = app.asset_protocol_scope();
-                    let _ = scope.allow_directory(dir_path, false);
+                    let res = scope.allow_directory(dir_path, false);
+                    app_info!("Asset protocol scope extended to '{}': {:?}", wallpaper_dir, res);
+                } else {
+                    app_warn!("Wallpaper directory is not a valid directory: '{}'", wallpaper_dir);
                 }
             }
 
             // If no valid directory configured or first launch, show window immediately
             if !has_valid_dir || needs_first_launch_prompt {
+                app_info!("First launch or missing directory -> showing main window");
                 if let Some(window) = app.get_webview_window("main") {
                     let _ = window.show();
                     let _ = window.center();
                     let _ = window.set_focus();
                 }
+            } else {
+                app_info!("Valid configuration present -> keeping main window hidden until triggered");
             }
 
             // --- Win32: Strip title bar on main overlay window ---
             #[cfg(target_os = "windows")]
             {
-                use windows_sys::Win32::UI::WindowsAndMessaging::{
-                    GetWindowLongPtrW, SetWindowLongPtrW, GWL_STYLE, WS_CAPTION, WS_SYSMENU,
-                };
-
-                let window = app.get_webview_window("main").expect("main window not found");
-                let hwnd = window.hwnd().expect("failed to get HWND");
-                let hwnd_raw = hwnd.0 as windows_sys::Win32::Foundation::HWND;
-
-                unsafe {
-                    let style = GetWindowLongPtrW(hwnd_raw, GWL_STYLE);
-                    let new_style = style & !(WS_CAPTION as isize) & !(WS_SYSMENU as isize);
-                    SetWindowLongPtrW(hwnd_raw, GWL_STYLE, new_style);
+                if let Some(window) = app.get_webview_window("main") {
+                    strip_main_window_decorations(&window);
                 }
             }
 
@@ -280,15 +364,18 @@ pub fn run() {
                 .menu(&menu)
                 .show_menu_on_left_click(false)
                 .on_tray_icon_event(|tray, event| {
+                    app_info!("[Tray] Event: {:?}", event);
                     if let TrayIconEvent::Click {
                         button: MouseButton::Left,
                         button_state: MouseButtonState::Up,
                         ..
                     } = event {
+                        app_info!("[Tray] Left-click -> toggle main window");
                         toggle_main_window_internal(tray.app_handle());
                     }
                 })
                 .on_menu_event(|app, event| {
+                    app_info!("[TrayMenu] Clicked id: '{}'", event.id().as_ref());
                     match event.id().as_ref() {
                         "toggle" => toggle_main_window_internal(app),
                         "settings" => open_settings_window_internal(app),
@@ -297,11 +384,15 @@ pub fn run() {
                     }
                 });
 
-            if let Some(icon) = app.default_window_icon() {
-                tray_builder = tray_builder.icon(icon.clone());
+            let tray_icon = tauri::image::Image::from_bytes(include_bytes!("../icons/icon.png"))
+                .ok()
+                .or_else(|| app.default_window_icon().cloned());
+            if let Some(icon) = tray_icon {
+                tray_builder = tray_builder.icon(icon);
             }
 
             let _tray = tray_builder.build(app)?;
+            app_info!("System tray created successfully");
 
             // --- Global shortcut registration ---
             #[cfg(desktop)]
@@ -315,29 +406,47 @@ pub fn run() {
                 };
 
                 match app.global_shortcut().register(shortcut_to_register) {
-                    Ok(_) => eprintln!("[Carousel] Registered global shortcut: {}", shortcut_to_register),
-                    Err(e) => eprintln!("[Carousel] Failed to register global shortcut '{}': {}", shortcut_to_register, e),
+                    Ok(_) => app_info!("[Shortcut] Successfully registered global shortcut: {}", shortcut_to_register),
+                    Err(e) => app_error!("[Shortcut] FAILED to register global shortcut '{}': {}", shortcut_to_register, e),
                 }
             }
 
             Ok(())
         })
         .on_window_event(|window, event| {
-            if window.label() == "main" {
-                if let tauri::WindowEvent::Focused(false) = event {
+            let label = window.label();
+            match event {
+                tauri::WindowEvent::Focused(focused) => {
                     let state = window.state::<AppState>();
-                    if !state.prevent_hide.load(Ordering::SeqCst) {
-                        let elapsed = state.last_shown.lock().unwrap().elapsed();
-                        if elapsed > std::time::Duration::from_millis(400) {
-                            let _ = window.hide();
+                    let elapsed = state.last_shown.lock().unwrap().elapsed();
+                    let prevent = state.prevent_hide.load(Ordering::SeqCst);
+                    app_info!("[WindowEvent] '{}' Focused({}) | elapsed: {:.1}ms | prevent_hide: {}",
+                        label, focused, elapsed.as_secs_f64() * 1000.0, prevent);
+
+                    if label == "main" && !*focused {
+                        if !prevent {
+                            if elapsed > std::time::Duration::from_millis(400) {
+                                app_info!("[WindowEvent] 'main' lost focus after grace period ({:.1}ms) -> HIDING window", elapsed.as_secs_f64() * 1000.0);
+                                let _ = window.hide();
+                            } else {
+                                app_info!("[WindowEvent] 'main' lost focus within grace period ({:.1}ms <= 400ms) -> IGNORING hide request", elapsed.as_secs_f64() * 1000.0);
+                            }
+                        } else {
+                            app_info!("[WindowEvent] 'main' lost focus but prevent_hide is active -> NOT hiding");
                         }
                     }
                 }
-            } else if window.label() == "settings" {
-                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                    api.prevent_close();
-                    let _ = window.hide();
+                tauri::WindowEvent::CloseRequested { api, .. } => {
+                    app_info!("[WindowEvent] '{}' CloseRequested", label);
+                    if label == "settings" {
+                        api.prevent_close();
+                        let _ = window.hide();
+                    }
                 }
+                tauri::WindowEvent::Destroyed => {
+                    app_info!("[WindowEvent] '{}' Destroyed", label);
+                }
+                _ => {}
             }
         })
         .invoke_handler(tauri::generate_handler![
@@ -353,6 +462,7 @@ pub fn run() {
             quit_app,
             set_prevent_hide,
             log_image_switch,
+            log_frontend,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

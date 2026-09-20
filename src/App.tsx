@@ -6,7 +6,7 @@ import AutostartPromptModal from './components/AutostartPromptModal';
 import Coverflow from './components/Coverflow';
 import { useWallpapers } from './hooks/useWallpapers';
 import { useKeyboardActions } from './hooks/useKeyboardActions';
-import { getConfig, setWallpaper } from './lib/tauri';
+import { getConfig, setWallpaper, logFrontend } from './lib/tauri';
 import type { WallpaperEntry } from './types';
 import './App.css';
 
@@ -21,8 +21,13 @@ export default function App() {
 
   // Check config on mount
   useEffect(() => {
+    logFrontend('INFO', `[App] Mounted. hash='${window.location.hash}'`);
     getConfig()
       .then((config) => {
+        logFrontend(
+          'INFO',
+          `[App] Loaded config: dir='${config.wallpaper_directory}', shortcut='${config.shortcut}', autostart_prompted=${config.autostart_prompted}`
+        );
         const valid =
           config.wallpaper_directory !== '' &&
           config.wallpaper_directory !== null;
@@ -31,7 +36,10 @@ export default function App() {
           setShowAutostartPrompt(true);
         }
       })
-      .catch(() => setHasDirectory(false));
+      .catch((e) => {
+        logFrontend('ERROR', `[App] Failed to load config: ${e}`);
+        setHasDirectory(false);
+      });
   }, []);
 
   const handleDirectorySet = useCallback(() => {

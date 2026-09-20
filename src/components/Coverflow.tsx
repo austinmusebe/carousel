@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { convertFileSrc, openSettingsWindow, logImageSwitch } from '../lib/tauri';
+import { convertFileSrc, openSettingsWindow, logImageSwitch, logFrontend } from '../lib/tauri';
 import type { WallpaperEntry } from '../types';
 import './Coverflow.css';
 
@@ -19,6 +19,10 @@ export default function Coverflow({ images, onSetWallpaper, onRefresh }: Coverfl
   const [loadedHighResMap, setLoadedHighResMap] = useState<Record<string, boolean>>({});
 
   const count = images.length;
+
+  useEffect(() => {
+    logFrontend('INFO', `[Coverflow] Rendered with ${count} images`);
+  }, [count]);
 
   // Track window resize to ensure exact pixel centering
   useEffect(() => {

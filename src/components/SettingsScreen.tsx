@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
-import { getConfig, saveSettings, isAutostartEnabled, toggleMainWindow, quitApp } from '../lib/tauri';
+import {
+  getConfig,
+  saveSettings,
+  isAutostartEnabled,
+  toggleMainWindow,
+  quitApp,
+  logFrontend,
+} from '../lib/tauri';
 import './SettingsScreen.css';
 
 const SHORTCUT_PRESETS = [
@@ -83,6 +90,16 @@ export default function SettingsScreen() {
       </div>
     );
   }
+
+  const handleToggleCarousel = async () => {
+    logFrontend('INFO', '[Settings] "Toggle Carousel" button clicked');
+    try {
+      await toggleMainWindow();
+      logFrontend('INFO', '[Settings] toggleMainWindow() succeeded');
+    } catch (err) {
+      logFrontend('ERROR', `[Settings] toggleMainWindow() failed: ${err}`);
+    }
+  };
 
   return (
     <div className="settings-page">
@@ -202,8 +219,8 @@ export default function SettingsScreen() {
         </button>
 
         <div className="footer-actions">
-          <button className="btn btn-outline" onClick={() => toggleMainWindow()}>
-            Open Picker
+          <button className="btn btn-outline" onClick={handleToggleCarousel}>
+            Toggle Carousel
           </button>
           <button
             className="btn btn-primary"
