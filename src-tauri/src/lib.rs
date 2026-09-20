@@ -404,8 +404,14 @@ pub fn run() {
                 };
 
                 match app.global_shortcut().register(shortcut_to_register) {
-                    Ok(_) => app_info!("[Shortcut] Successfully registered global shortcut: {}", shortcut_to_register),
-                    Err(e) => app_error!("[Shortcut] FAILED to register global shortcut '{}': {}", shortcut_to_register, e),
+                    Ok(_) => {
+                        eprintln!("[Carousel] Registered global shortcut: {}", shortcut_to_register);
+                        app_info!("[Shortcut] Successfully registered global shortcut: {}", shortcut_to_register);
+                    }
+                    Err(e) => {
+                        eprintln!("[Carousel] Failed to register global shortcut '{}': {}", shortcut_to_register, e);
+                        app_error!("[Shortcut] FAILED to register global shortcut '{}': {}", shortcut_to_register, e);
+                    }
                 }
             }
 
