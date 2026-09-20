@@ -364,13 +364,11 @@ pub fn run() {
                 .menu(&menu)
                 .show_menu_on_left_click(false)
                 .on_tray_icon_event(|tray, event| {
-                    app_info!("[Tray] Event: {:?}", event);
                     if let TrayIconEvent::Click {
                         button: MouseButton::Left,
                         button_state: MouseButtonState::Up,
                         ..
                     } = event {
-                        app_info!("[Tray] Left-click -> toggle main window");
                         toggle_main_window_internal(tray.app_handle());
                     }
                 })

@@ -67,6 +67,10 @@ export default function App() {
     window.dispatchEvent(new CustomEvent('set-active-wallpaper'));
   }, [showAutostartPrompt]);
 
+  const handleRefresh = useCallback(() => {
+    return refresh(true);
+  }, [refresh]);
+
   useKeyboardActions(handleEnterKey);
 
   // Loading config check
@@ -97,10 +101,6 @@ export default function App() {
       </div>
     );
   }
-
-  const handleRefresh = useCallback(() => {
-    return refresh(true);
-  }, [refresh]);
 
   return (
     <>
