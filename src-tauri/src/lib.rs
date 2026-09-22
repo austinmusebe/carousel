@@ -195,9 +195,19 @@ fn set_autostart(
 ) -> Result<(), String> {
     use tauri_plugin_autostart::ManagerExt;
     if enabled {
-        app.autolaunch().enable().map_err(|e| e.to_string())?;
+        app.autolaunch().enable().map_err(|e| {
+            app_error!("[Autostart] Failed to enable: {}", e);
+            e.to_string()
+        })?;
+        app_info!("[Autostart] Enabled successfully");
+    } else if app.autolaunch().is_enabled().unwrap_or(false) {
+        if let Err(e) = app.autolaunch().disable() {
+            app_warn!("[Autostart] Failed to disable (ignoring if already not registered): {}", e);
+        } else {
+            app_info!("[Autostart] Disabled successfully");
+        }
     } else {
-        app.autolaunch().disable().map_err(|e| e.to_string())?;
+        app_info!("[Autostart] Already disabled, skipping disable call");
     }
     let mut config = state.config.lock().map_err(|e| e.to_string())?;
     config.autostart = enabled;
@@ -217,9 +227,13 @@ fn save_settings(
 ) -> Result<(), String> {
     use tauri_plugin_autostart::ManagerExt;
     if autostart {
-        let _ = app.autolaunch().enable();
-    } else {
-        let _ = app.autolaunch().disable();
+        if let Err(e) = app.autolaunch().enable() {
+            app_warn!("[Autostart] Failed to enable: {}", e);
+        }
+    } else if app.autolaunch().is_enabled().unwrap_or(false) {
+        if let Err(e) = app.autolaunch().disable() {
+            app_warn!("[Autostart] Failed to disable: {}", e);
+        }
     }
 
     let mut config = state.config.lock().map_err(|e| e.to_string())?;
