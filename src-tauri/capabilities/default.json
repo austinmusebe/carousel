@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "main-capability",
-  "description": "Capability for the main window of Carousel Wallpaper Changer",
+  "description": "Capability for the main window of carousel",
   "windows": ["main", "settings"],
   "platforms": ["windows"],
   "permissions": [

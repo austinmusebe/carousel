@@ -88,7 +88,11 @@ fn toggle_main_window_internal(app: &tauri::AppHandle) {
                     unsafe {
                         let b_res = BringWindowToTop(hwnd.0 as _);
                         let s_res = SetForegroundWindow(hwnd.0 as _);
-                        app_info!("[Toggle] Win32 BringWindowToTop={:?}, SetForegroundWindow={:?}", b_res != 0, s_res != 0);
+                        app_info!(
+                            "[Toggle] Win32 BringWindowToTop={:?}, SetForegroundWindow={:?}",
+                            b_res != 0,
+                            s_res != 0
+                        );
                     }
                 }
             }
@@ -119,17 +123,28 @@ fn log_frontend(level: String, message: String) {
 }
 
 #[tauri::command]
-fn scan_wallpapers(state: tauri::State<'_, AppState>) -> Result<Vec<scanner::WallpaperEntry>, String> {
+fn scan_wallpapers(
+    state: tauri::State<'_, AppState>,
+) -> Result<Vec<scanner::WallpaperEntry>, String> {
     app_info!("[Command] scan_wallpapers called");
     let config = state.config.lock().map_err(|e| e.to_string())?;
     if !config.has_valid_directory() {
-        app_warn!("[Command] scan_wallpapers: invalid directory '{}'", config.wallpaper_directory);
+        app_warn!(
+            "[Command] scan_wallpapers: invalid directory '{}'",
+            config.wallpaper_directory
+        );
         return Err("No valid wallpaper directory configured".to_string());
     }
-    app_info!("[Command] scan_wallpapers scanning: '{}'", config.wallpaper_directory);
+    app_info!(
+        "[Command] scan_wallpapers scanning: '{}'",
+        config.wallpaper_directory
+    );
     let res = scanner::scan_directory(&config.wallpaper_directory);
     match &res {
-        Ok(entries) => app_info!("[Command] scan_wallpapers succeeded with {} images", entries.len()),
+        Ok(entries) => app_info!(
+            "[Command] scan_wallpapers succeeded with {} images",
+            entries.len()
+        ),
         Err(e) => app_error!("[Command] scan_wallpapers failed: {}", e),
     }
     res
@@ -233,7 +248,10 @@ fn save_settings(
         let _ = app.global_shortcut().unregister_all();
         if !config.shortcut.is_empty() {
             if let Err(e) = app.global_shortcut().register(config.shortcut.as_str()) {
-                eprintln!("[Carousel] Failed to re-register shortcut '{}': {}", config.shortcut, e);
+                eprintln!(
+                    "[Carousel] Failed to re-register shortcut '{}': {}",
+                    config.shortcut, e
+                );
                 return Err(format!("Invalid shortcut '{}': {}", config.shortcut, e));
             } else {
                 eprintln!("[Carousel] Re-registered shortcut: {}", config.shortcut);
@@ -273,7 +291,14 @@ fn set_prevent_hide(state: tauri::State<'_, AppState>, prevent: bool) {
 }
 
 #[tauri::command]
-fn log_image_switch(from: String, to: String, switch_ms: f64, width: u32, height: u32, file_size: u64) {
+fn log_image_switch(
+    from: String,
+    to: String,
+    switch_ms: f64,
+    width: u32,
+    height: u32,
+    file_size: u64,
+) {
     let mb = file_size as f64 / (1024.0 * 1024.0);
     println!(
         "[Switch] \"{}\" -> \"{}\" | latency: {:.1}ms | res: {}x{} | size: {:.2} MB",
@@ -286,7 +311,8 @@ pub fn run() {
     // Suppress benign Chromium shutdown log spew (e.g. Failed to unregister class Chrome_WidgetWin_0. Error = 1412)
     #[cfg(target_os = "windows")]
     {
-        let current_args = std::env::var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS").unwrap_or_default();
+        let current_args =
+            std::env::var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS").unwrap_or_default();
         if !current_args.contains("--log-level") {
             let new_args = if current_args.is_empty() {
                 "--log-level=3".to_string()
@@ -322,7 +348,7 @@ pub fn run() {
             logger::init(log_path);
 
             app_info!("================================================");
-            app_info!("Carousel Wallpaper Changer starting up");
+            app_info!("carousel starting up");
             app_info!("================================================");
 
             // Load config

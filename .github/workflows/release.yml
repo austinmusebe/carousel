@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version tag (e.g. v0.1.0)'
+        description: "Release version tag (e.g. v0.1.0)"
         required: true
-        default: 'v0.1.0'
+        default: "v0.1.0"
         type: string
 
 permissions:
@@ -32,7 +32,7 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: './src-tauri -> target'
+          workspaces: "./src-tauri -> target"
 
       - name: Install frontend dependencies
         run: npm install
@@ -43,7 +43,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ inputs.version }}
-          releaseName: 'Carousel Wallpaper Changer ${{ inputs.version }}'
-          releaseBody: 'Release build for Windows. Download the installer executable from the assets below.'
+          releaseName: "carousel ${{ inputs.version }}"
+          releaseBody: "Release build for Windows. Download the installer executable from the assets below."
           releaseDraft: false
           prerelease: false

@@ -29,11 +29,19 @@ pub fn init(path: PathBuf) {
     if let Some(parent) = path.parent() {
         let _ = std::fs::create_dir_all(parent);
     }
-    if let Ok(mut f) = OpenOptions::new().create(true).write(true).truncate(true).open(&path) {
-        let _ = writeln!(f, "=== Carousel Wallpaper Changer Verbose Log Started ===");
+    if let Ok(mut f) = OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(true)
+        .open(&path)
+    {
+        let _ = writeln!(f, "=== carousel Verbose Log Started ===");
         let _ = writeln!(f, "Log file: {}", path.display());
     }
-    eprintln!("[Carousel Log] Verbose logging enabled. Log file: {}", path.display());
+    eprintln!(
+        "[Carousel Log] Verbose logging enabled. Log file: {}",
+        path.display()
+    );
     *LOG_PATH.lock().unwrap() = Some(path);
 }
 

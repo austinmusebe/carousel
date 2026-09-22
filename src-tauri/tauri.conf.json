@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Carousel Wallpaper Changer",
+  "productName": "carousel",
   "version": "0.1.0",
-  "identifier": "com.carousel-wallpaper-changer.app",
+  "identifier": "com.carousel.app",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Carousel Wallpaper Changer",
+        "title": "carousel",
         "width": 1200,
         "height": 700,
         "center": true,
@@ -29,7 +29,7 @@
       },
       {
         "label": "settings",
-        "title": "Carousel Wallpaper Changer - Settings",
+        "title": "carousel - Settings",
         "width": 540,
         "height": 500,
         "center": true,

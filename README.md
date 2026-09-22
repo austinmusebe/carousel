@@ -2,7 +2,7 @@
 
 ## 1. Description
 
-Carousel Wallpaper Changer is a desktop application for Microsoft Windows.
+carousel is a desktop application for Windows that allows you to quickly change your wallpaper on the fly.
 The application shows an overlay gallery to select and change desktop wallpapers.
 The user opens the gallery with a global keyboard shortcut.
 The user selects an image from a local folder to set the wallpaper.
@@ -22,11 +22,13 @@ Make sure that your computer meets these requirements:
 Follow these steps to prepare and build the application:
 
 1. Clone the repository to your local computer:
+
    ```shell
    git clone https://github.com/dofna/Carousel-Wallpaper-Changer.git
    ```
 
 2. Change to the project directory:
+
    ```shell
    cd Carousel-Wallpaper-Changer
    ```
