@@ -8,6 +8,7 @@ import {
   quitApp,
   logFrontend,
 } from '../lib/tauri';
+import type { DisplayMode } from '../types';
 import './SettingsScreen.css';
 
 const SHORTCUT_PRESETS = [
@@ -21,6 +22,7 @@ export default function SettingsScreen() {
   const [directory, setDirectory] = useState('');
   const [shortcut, setShortcut] = useState('Alt+W');
   const [autostart, setAutostart] = useState(false);
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('carousel');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -31,6 +33,7 @@ export default function SettingsScreen() {
       .then(async (cfg) => {
         setDirectory(cfg.wallpaper_directory || '');
         setShortcut(cfg.shortcut || 'Alt+W');
+        setDisplayMode(cfg.display_mode || 'carousel');
         try {
           const enabled = await isAutostartEnabled();
           setAutostart(enabled);
@@ -67,7 +70,7 @@ export default function SettingsScreen() {
     setStatusMessage(null);
     setIsError(false);
     try {
-      await saveSettings(shortcut, directory, autostart);
+      await saveSettings(shortcut, directory, autostart, displayMode);
       setStatusMessage('Settings saved successfully');
       setIsError(false);
       setTimeout(() => {
@@ -172,17 +175,74 @@ export default function SettingsScreen() {
           </div>
         </section>
 
-        {/* Section: In-Gallery Refresh Shortcut (Non-modifiable) */}
+        {/* Section: Display Options */}
         <section className="settings-section">
           <div className="section-meta">
-            <label className="section-label">Reload Directory Shortcut</label>
+            <label className="section-label">Display Options</label>
+            <p className="section-hint">Choose the visual layout for previewing and selecting wallpapers.</p>
+          </div>
+          <div className="display-options-grid">
+            <button
+              type="button"
+              className={`display-option-card ${displayMode === 'carousel' ? 'active' : ''}`}
+              onClick={() => setDisplayMode('carousel')}
+            >
+              <div className="display-option-preview">
+                <div className="preview-card-carousel side" />
+                <div className="preview-card-carousel center" />
+                <div className="preview-card-carousel side" />
+              </div>
+              <div className="display-option-info">
+                <div className="display-option-header">
+                  <span className="display-option-title">Carousel</span>
+                  <span className="display-option-badge">Default</span>
+                </div>
+                <p className="display-option-desc">
+                  Classic horizontal card stack with center focus.
+                </p>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              className={`display-option-card ${displayMode === 'shard' ? 'active' : ''}`}
+              onClick={() => setDisplayMode('shard')}
+            >
+              <div className="display-option-preview">
+                <div className="preview-card-shard side" />
+                <div className="preview-card-shard center" />
+                <div className="preview-card-shard side" />
+              </div>
+              <div className="display-option-info">
+                <div className="display-option-header">
+                  <span className="display-option-title">Shard Display</span>
+                  <span className="display-option-badge">Dynamic</span>
+                </div>
+                <p className="display-option-desc">
+                  Modern angled parallelogram shards cut at a dynamic slant.
+                </p>
+              </div>
+            </button>
+          </div>
+        </section>
+
+        {/* Section: In-Gallery Shortcuts (Non-modifiable) */}
+        <section className="settings-section">
+          <div className="section-meta">
+            <label className="section-label">In-Gallery Shortcuts</label>
             <p className="section-hint">
-              Check for new or modified images while the wallpaper carousel is open.
+              Quick keyboard actions available while the wallpaper picker is open.
             </p>
           </div>
-          <div className="readonly-shortcut-row">
-            <kbd className="readonly-kbd">R</kbd>
-            <span className="readonly-shortcut-label">Fixed in-gallery shortcut</span>
+          <div className="readonly-shortcuts-list">
+            <div className="readonly-shortcut-row">
+              <kbd className="readonly-kbd">R</kbd>
+              <span className="readonly-shortcut-label">Reload wallpapers from directory</span>
+            </div>
+            <div className="readonly-shortcut-row">
+              <kbd className="readonly-kbd">S</kbd>
+              <span className="readonly-shortcut-label">Open settings</span>
+            </div>
           </div>
         </section>
 

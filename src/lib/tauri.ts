@@ -27,9 +27,15 @@ export async function setPreventHide(prevent: boolean): Promise<void> {
 export async function saveSettings(
   shortcut: string,
   directory: string,
-  autostart: boolean
+  autostart: boolean,
+  displayMode: string = 'carousel'
 ): Promise<void> {
-  return invoke('save_settings', { shortcut, directory, autostart });
+  return invoke('save_settings', {
+    shortcut,
+    directory,
+    autostart,
+    displayMode,
+  });
 }
 
 export async function isAutostartEnabled(): Promise<boolean> {

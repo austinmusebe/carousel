@@ -151,6 +151,9 @@ export default function Coverflow({ images, onSetWallpaper, onRefresh }: Coverfl
       } else if (e.key === 'r' || e.key === 'R') {
         e.preventDefault();
         handleRefresh();
+      } else if (e.key === 's' || e.key === 'S') {
+        e.preventDefault();
+        openSettingsWindow();
       }
     };
 

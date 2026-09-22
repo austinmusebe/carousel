@@ -4,10 +4,11 @@ import SetupScreen from './components/SetupScreen';
 import SettingsScreen from './components/SettingsScreen';
 import AutostartPromptModal from './components/AutostartPromptModal';
 import Coverflow from './components/Coverflow';
+import Shardflow from './components/Shardflow';
 import { useWallpapers } from './hooks/useWallpapers';
 import { useKeyboardActions } from './hooks/useKeyboardActions';
 import { getConfig, setWallpaper, logFrontend } from './lib/tauri';
-import type { WallpaperEntry } from './types';
+import type { WallpaperEntry, DisplayMode } from './types';
 import './App.css';
 
 export default function App() {
@@ -17,6 +18,7 @@ export default function App() {
 
   const [hasDirectory, setHasDirectory] = useState<boolean | null>(null);
   const [showAutostartPrompt, setShowAutostartPrompt] = useState(false);
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('carousel');
   const { images, loading, error, refresh } = useWallpapers();
 
   // Check config on mount
@@ -26,12 +28,17 @@ export default function App() {
       .then((config) => {
         logFrontend(
           'INFO',
-          `[App] Loaded config: dir='${config.wallpaper_directory}', shortcut='${config.shortcut}', autostart_prompted=${config.autostart_prompted}`
+          `[App] Loaded config: dir='${config.wallpaper_directory}', shortcut='${config.shortcut}', display_mode='${config.display_mode}', autostart_prompted=${config.autostart_prompted}`
         );
         const valid =
           config.wallpaper_directory !== '' &&
           config.wallpaper_directory !== null;
         setHasDirectory(valid);
+        if (config.display_mode === 'shard') {
+          setDisplayMode('shard');
+        } else {
+          setDisplayMode('carousel');
+        }
         if (valid && !config.autostart_prompted) {
           setShowAutostartPrompt(true);
         }
@@ -40,6 +47,21 @@ export default function App() {
         logFrontend('ERROR', `[App] Failed to load config: ${e}`);
         setHasDirectory(false);
       });
+  }, []);
+
+  // Update display mode and settings on window focus
+  useEffect(() => {
+    const handleFocus = () => {
+      getConfig()
+        .then((config) => {
+          if (config.display_mode) {
+            setDisplayMode(config.display_mode === 'shard' ? 'shard' : 'carousel');
+          }
+        })
+        .catch(() => {});
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
   const handleDirectorySet = useCallback(() => {
@@ -107,11 +129,19 @@ export default function App() {
       {showAutostartPrompt && (
         <AutostartPromptModal onDone={() => setShowAutostartPrompt(false)} />
       )}
-      <Coverflow
-        images={images}
-        onSetWallpaper={handleSetWallpaper}
-        onRefresh={handleRefresh}
-      />
+      {displayMode === 'shard' ? (
+        <Shardflow
+          images={images}
+          onSetWallpaper={handleSetWallpaper}
+          onRefresh={handleRefresh}
+        />
+      ) : (
+        <Coverflow
+          images={images}
+          onSetWallpaper={handleSetWallpaper}
+          onRefresh={handleRefresh}
+        />
+      )}
     </>
   );
 }

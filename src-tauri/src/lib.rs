@@ -198,6 +198,7 @@ fn save_settings(
     shortcut: String,
     directory: String,
     autostart: bool,
+    display_mode: String,
 ) -> Result<(), String> {
     use tauri_plugin_autostart::ManagerExt;
     if autostart {
@@ -211,6 +212,11 @@ fn save_settings(
     config.wallpaper_directory = directory.clone();
     config.autostart = autostart;
     config.autostart_prompted = true;
+    config.display_mode = if display_mode == "shard" {
+        "shard".to_string()
+    } else {
+        "carousel".to_string()
+    };
     config.save(&app);
 
     // Extend asset protocol scope
@@ -248,9 +254,17 @@ fn open_settings_window(app: tauri::AppHandle) {
     open_settings_window_internal(&app);
 }
 
+fn quit_app_internal(app: &tauri::AppHandle) {
+    app_info!("[Quit] Graceful app exit initiated");
+    for (_label, window) in app.webview_windows() {
+        let _ = window.destroy();
+    }
+    app.exit(0);
+}
+
 #[tauri::command]
 fn quit_app(app: tauri::AppHandle) {
-    app.exit(0);
+    quit_app_internal(&app);
 }
 
 #[tauri::command]
@@ -269,6 +283,20 @@ fn log_image_switch(from: String, to: String, switch_ms: f64, width: u32, height
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Suppress benign Chromium shutdown log spew (e.g. Failed to unregister class Chrome_WidgetWin_0. Error = 1412)
+    #[cfg(target_os = "windows")]
+    {
+        let current_args = std::env::var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS").unwrap_or_default();
+        if !current_args.contains("--log-level") {
+            let new_args = if current_args.is_empty() {
+                "--log-level=3".to_string()
+            } else {
+                format!("{} --log-level=3", current_args)
+            };
+            std::env::set_var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", new_args);
+        }
+    }
+
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_autostart::init(
@@ -377,7 +405,7 @@ pub fn run() {
                     match event.id().as_ref() {
                         "toggle" => toggle_main_window_internal(app),
                         "settings" => open_settings_window_internal(app),
-                        "quit" => app.exit(0),
+                        "quit" => quit_app_internal(app),
                         _ => {}
                     }
                 });

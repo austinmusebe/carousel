@@ -3,6 +3,10 @@ use std::fs;
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
 
+fn default_display_mode() -> String {
+    "carousel".to_string()
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {
     pub shortcut: String,
@@ -11,6 +15,8 @@ pub struct AppConfig {
     pub autostart: bool,
     #[serde(default)]
     pub autostart_prompted: bool,
+    #[serde(default = "default_display_mode")]
+    pub display_mode: String,
 }
 
 impl Default for AppConfig {
@@ -20,6 +26,7 @@ impl Default for AppConfig {
             wallpaper_directory: String::new(),
             autostart: false,
             autostart_prompted: false,
+            display_mode: default_display_mode(),
         }
     }
 }

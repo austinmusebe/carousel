@@ -162,11 +162,17 @@
 }
 
 /* Read-only Shortcut Row */
+.readonly-shortcuts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 2px;
+}
+
 .readonly-shortcut-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 2px;
 }
 
 .readonly-kbd {
@@ -189,6 +195,144 @@
 .readonly-shortcut-label {
   font-size: 12px;
   color: #71717a;
+}
+
+/* Display Options Grid */
+.display-options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.display-option-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  padding: 14px 16px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  text-align: left;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.display-option-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: #3f3f46;
+}
+
+.display-option-card.active {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: #f4f4f5;
+  box-shadow: 0 0 0 1px #f4f4f5, 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.display-option-preview {
+  height: 52px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  overflow: hidden;
+  padding: 0 12px;
+}
+
+/* Carousel Preview Graphic */
+.preview-card-carousel {
+  height: 30px;
+  background: #3f3f46;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+}
+
+.preview-card-carousel.side {
+  width: 14px;
+  opacity: 0.4;
+}
+
+.preview-card-carousel.center {
+  width: 52px;
+  background: #a1a1aa;
+}
+
+.display-option-card.active .preview-card-carousel.center {
+  background: #ffffff;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.35);
+}
+
+/* Shard Preview Graphic */
+.preview-card-shard {
+  height: 32px;
+  background: #3f3f46;
+  border-radius: 2px;
+  transform: skewX(-20deg);
+  transition: all 0.2s ease;
+}
+
+.preview-card-shard.side {
+  width: 14px;
+  opacity: 0.4;
+}
+
+.preview-card-shard.center {
+  width: 50px;
+  background: #a1a1aa;
+}
+
+.display-option-card.active .preview-card-shard.center {
+  background: #ffffff;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.35);
+}
+
+.display-option-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.display-option-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.display-option-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f4f4f5;
+  letter-spacing: -0.01em;
+}
+
+.display-option-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #a1a1aa;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+}
+
+.display-option-card.active .display-option-badge {
+  background: #fafafa;
+  color: #09090b;
+}
+
+.display-option-desc {
+  font-size: 11px;
+  color: #71717a;
+  line-height: 1.4;
+  margin: 0;
 }
 
 /* Buttons (ShadCN Button Variants) */

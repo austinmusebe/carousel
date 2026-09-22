@@ -104,7 +104,7 @@ export default function SetupScreen({ onDirectorySet }: SetupScreenProps) {
         <div className="setup-tip-box">
           <span className="setup-tip-badge">Tip</span>
           <span className="setup-tip-text">
-            Press <kbd className="setup-kbd">R</kbd> anytime while the carousel is open to check for new images in your folder.
+            While the carousel is open, press <kbd className="setup-kbd">R</kbd> to reload images or <kbd className="setup-kbd">S</kbd> to open settings.
           </span>
         </div>
       </div>

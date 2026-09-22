@@ -1,0 +1,248 @@
+.shard-viewport {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 6%,
+    black 94%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 6%,
+    black 94%,
+    transparent 100%
+  );
+}
+
+.shard-stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.shard-slot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  height: 440px;
+  max-height: 64vh;
+  border-radius: 4px;
+  overflow: hidden;
+  box-sizing: border-box;
+  contain: paint layout;
+  transform-origin: center center;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              width 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, width;
+}
+
+.shard-slot::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 10;
+}
+
+.shard-slot.inactive {
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.shard-slot.inactive:hover::after {
+  opacity: 0.15;
+}
+
+.shard-slot.active {
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.shard-slot.active::after {
+  opacity: 0;
+}
+
+.shard-image {
+  position: absolute;
+  top: 0;
+  left: -120px;
+  width: calc(100% + 240px);
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+  transform: skewX(20deg);
+  transform-origin: center center;
+}
+
+.shard-image.thumb-layer {
+  z-index: 1;
+}
+
+.shard-image.full-layer {
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.shard-image.full-layer.is-loaded {
+  opacity: 1;
+}
+
+.shard-pill {
+  position: absolute;
+  bottom: 16px;
+  left: 24px;
+  z-index: 50;
+  background: rgba(9, 9, 11, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 8px 14px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  max-width: 80%;
+  transform: skewX(20deg);
+  transform-origin: bottom left;
+}
+
+.shard-pill-top {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.shard-pill-resolution {
+  color: #f4f4f5;
+  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  line-height: 1.2;
+}
+
+.shard-pill-filesize {
+  color: #a1a1aa;
+  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.shard-pill-bottom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.shard-pill-name {
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.2px;
+  max-width: 260px;
+}
+
+.shard-pill-tag {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.shard-empty {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  gap: 16px;
+  font-size: 15px;
+}
+
+.shard-settings-link {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  padding: 8px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.shard-settings-link:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.shard-toast {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(9, 9, 11, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  padding: 6px 16px;
+  color: #f4f4f5;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  animation: shard-toast-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.shard-toast-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+@keyframes shard-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}

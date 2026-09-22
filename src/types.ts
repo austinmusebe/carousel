@@ -7,9 +7,13 @@ export interface WallpaperEntry {
   file_size: number; // bytes
 }
 
+export type DisplayMode = 'carousel' | 'shard';
+
 export interface AppConfig {
   shortcut: string;
   wallpaper_directory: string;
   autostart?: boolean;
   autostart_prompted?: boolean;
+  display_mode?: DisplayMode;
 }
+
