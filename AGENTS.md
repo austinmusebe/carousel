@@ -71,3 +71,5 @@ copying last session's list forward blind.
 - Any additional runtime dependency beyond what's in the initial plan
 - Changing the asset protocol scope to anything broader than the wallpaper directory
 - Anything that would require admin/elevated privileges
+- Making a git commit: never commit automatically; always propose the message and wait for explicit user approval
+

@@ -54,6 +54,20 @@ impl AppConfig {
                     eprintln!("Failed to read config: {e}, using defaults");
                 }
             }
+        } else if let Some(appdata) = path.parent().and_then(|p| p.parent()) {
+            // Migration fallback: check legacy folder from before rebranding to "carousel"
+            let legacy_path = appdata
+                .join("com.carousel-wallpaper-changer.app")
+                .join("config.json");
+            if legacy_path.exists() {
+                if let Ok(content) = fs::read_to_string(&legacy_path) {
+                    if let Ok(config) = serde_json::from_str::<AppConfig>(&content) {
+                        eprintln!("[Config] Migrated legacy config from {:?}", legacy_path);
+                        config.save(app);
+                        return config;
+                    }
+                }
+            }
         }
         let config = Self::default();
         config.save(app);

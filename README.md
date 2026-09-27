@@ -138,7 +138,7 @@ This shortcut is built into the application and cannot be changed.
 The application saves settings in a JSON file at this location:
 
 ```text
-%APPDATA%\com.carousel-wallpaper-changer.app\config.json
+%APPDATA%\com.carousel.app\config.json
 ```
 
 ## 7. Architecture
