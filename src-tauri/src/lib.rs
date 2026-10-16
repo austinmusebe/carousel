@@ -9,7 +9,35 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+use tauri::window::{Effect, EffectState, EffectsBuilder};
 use tauri::Manager;
+
+fn apply_window_blur_and_size(window: &tauri::WebviewWindow, config: &AppConfig) {
+    if config.blur_background {
+        if config.blur_mode == "fullscreen" {
+            if let Ok(Some(monitor)) = window.current_monitor() {
+                let size = monitor.size();
+                let pos = monitor.position();
+                let _ = window.set_size(tauri::Size::Physical(*size));
+                let _ = window.set_position(tauri::Position::Physical(*pos));
+            }
+        } else {
+            let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize::new(1200.0, 700.0)));
+            let _ = window.center();
+        }
+
+        let _ = window.set_effects(
+            EffectsBuilder::new()
+                .effects(vec![Effect::Acrylic, Effect::Blur])
+                .state(EffectState::Active)
+                .build(),
+        );
+    } else {
+        let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize::new(1200.0, 700.0)));
+        let _ = window.center();
+        let _ = window.set_effects(None);
+    }
+}
 
 // App state to hold the config and dialog open state
 pub struct AppState {
@@ -61,6 +89,9 @@ fn toggle_main_window_internal(app: &tauri::AppHandle) {
             app_info!("[Toggle] Main window is currently hidden -> showing");
             let state = app.state::<AppState>();
             *state.last_shown.lock().unwrap() = std::time::Instant::now();
+            let config = state.config.lock().unwrap().clone();
+            apply_window_blur_and_size(&window, &config);
+
             if let Err(e) = window.show() {
                 app_error!("[Toggle] Failed window.show(): {}", e);
             } else {
@@ -69,8 +100,10 @@ fn toggle_main_window_internal(app: &tauri::AppHandle) {
             if let Err(e) = window.unminimize() {
                 app_warn!("[Toggle] Failed window.unminimize(): {}", e);
             }
-            if let Err(e) = window.center() {
-                app_warn!("[Toggle] Failed window.center(): {}", e);
+            if !(config.blur_background && config.blur_mode == "fullscreen") {
+                if let Err(e) = window.center() {
+                    app_warn!("[Toggle] Failed window.center(): {}", e);
+                }
             }
             if let Err(e) = window.set_focus() {
                 app_warn!("[Toggle] Failed window.set_focus(): {}", e);
@@ -224,6 +257,8 @@ fn save_settings(
     directory: String,
     autostart: bool,
     display_mode: String,
+    blur_background: bool,
+    blur_mode: String,
 ) -> Result<(), String> {
     use tauri_plugin_autostart::ManagerExt;
     if autostart {
@@ -246,7 +281,17 @@ fn save_settings(
     } else {
         "carousel".to_string()
     };
+    config.blur_background = blur_background;
+    config.blur_mode = if blur_mode == "window" {
+        "window".to_string()
+    } else {
+        "fullscreen".to_string()
+    };
     config.save(&app);
+
+    if let Some(window) = app.get_webview_window("main") {
+        apply_window_blur_and_size(&window, &config);
+    }
 
     // Extend asset protocol scope
     let scope = app.asset_protocol_scope();
@@ -378,7 +423,7 @@ pub fn run() {
 
             // Store config in app state
             app.manage(AppState {
-                config: Mutex::new(config),
+                config: Mutex::new(config.clone()),
                 prevent_hide: AtomicBool::new(false),
                 last_shown: Mutex::new(std::time::Instant::now()),
             });
@@ -412,6 +457,7 @@ pub fn run() {
             {
                 if let Some(window) = app.get_webview_window("main") {
                     strip_main_window_decorations(&window);
+                    apply_window_blur_and_size(&window, &config);
                 }
             }
 

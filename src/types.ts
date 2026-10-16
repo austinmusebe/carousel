@@ -8,6 +8,7 @@ export interface WallpaperEntry {
 }
 
 export type DisplayMode = 'carousel' | 'shard';
+export type BlurMode = 'fullscreen' | 'window';
 
 export interface AppConfig {
   shortcut: string;
@@ -15,5 +16,7 @@ export interface AppConfig {
   autostart?: boolean;
   autostart_prompted?: boolean;
   display_mode?: DisplayMode;
+  blur_background?: boolean;
+  blur_mode?: BlurMode;
 }
 

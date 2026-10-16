@@ -28,13 +28,17 @@ export async function saveSettings(
   shortcut: string,
   directory: string,
   autostart: boolean,
-  displayMode: string = 'carousel'
+  displayMode: string = 'carousel',
+  blurBackground: boolean = false,
+  blurMode: string = 'fullscreen'
 ): Promise<void> {
   return invoke('save_settings', {
     shortcut,
     directory,
     autostart,
     displayMode,
+    blurBackground,
+    blurMode,
   });
 }
 

@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { convertFileSrc, openSettingsWindow, logImageSwitch, logFrontend } from '../lib/tauri';
-import type { WallpaperEntry } from '../types';
+import type { WallpaperEntry, BlurMode } from '../types';
 import './Shardflow.css';
 
 interface ShardflowProps {
   images: WallpaperEntry[];
   onSetWallpaper: (entry: WallpaperEntry) => void;
   onRefresh?: () => Promise<WallpaperEntry[] | null> | Promise<void> | void;
+  blurBackground?: boolean;
+  blurMode?: BlurMode;
 }
 
 const VISIBLE_RADIUS = 6;
@@ -14,7 +17,13 @@ const SHARD_STRIP_WIDTH = 110; // px
 const GAP = 28; // px
 const LRU_CAPACITY = 8;
 
-export default function Shardflow({ images, onSetWallpaper, onRefresh }: ShardflowProps) {
+export default function Shardflow({
+  images,
+  onSetWallpaper,
+  onRefresh,
+  blurBackground = false,
+  blurMode = 'fullscreen',
+}: ShardflowProps) {
   const [virtualIndex, setVirtualIndex] = useState(0);
   const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
   const [loadedHighResMap, setLoadedHighResMap] = useState<Record<string, boolean>>({});
@@ -251,15 +260,31 @@ export default function Shardflow({ images, onSetWallpaper, onRefresh }: Shardfl
     });
   }
 
+    const blurClass = blurBackground
+    ? blurMode === 'window'
+      ? 'blur-window'
+      : 'blur-fullscreen'
+    : '';
+
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget && blurBackground && blurMode === 'fullscreen') {
+      getCurrentWindow().hide();
+    }
+  };
+
   return (
-    <div className="shard-viewport" onWheel={handleWheel}>
+    <div
+      className={`shard-viewport ${blurClass}`}
+      onWheel={handleWheel}
+      onClick={handleBackdropClick}
+    >
       {refreshNotification && (
         <div className="shard-toast">
           <span className="shard-toast-dot" />
           <span>{refreshNotification}</span>
         </div>
       )}
-      <div className="shard-stage">
+      <div className="shard-stage" onClick={handleBackdropClick}>
         {slots.map((slot) => {
           const fileExt = slot.img.filename.split('.').pop()?.toUpperCase() || 'IMG';
           const isHighResReady = loadedHighResMap[slot.img.path];

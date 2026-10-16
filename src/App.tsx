@@ -8,7 +8,7 @@ import Shardflow from './components/Shardflow';
 import { useWallpapers } from './hooks/useWallpapers';
 import { useKeyboardActions } from './hooks/useKeyboardActions';
 import { getConfig, setWallpaper, logFrontend } from './lib/tauri';
-import type { WallpaperEntry, DisplayMode } from './types';
+import type { WallpaperEntry, DisplayMode, BlurMode } from './types';
 import './App.css';
 
 export default function App() {
@@ -19,6 +19,8 @@ export default function App() {
   const [hasDirectory, setHasDirectory] = useState<boolean | null>(null);
   const [showAutostartPrompt, setShowAutostartPrompt] = useState(false);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('carousel');
+  const [blurBackground, setBlurBackground] = useState<boolean>(false);
+  const [blurMode, setBlurMode] = useState<BlurMode>('fullscreen');
   const { images, loading, error, refresh } = useWallpapers();
 
   // Check config on mount
@@ -28,7 +30,7 @@ export default function App() {
       .then((config) => {
         logFrontend(
           'INFO',
-          `[App] Loaded config: dir='${config.wallpaper_directory}', shortcut='${config.shortcut}', display_mode='${config.display_mode}', autostart_prompted=${config.autostart_prompted}`
+          `[App] Loaded config: dir='${config.wallpaper_directory}', shortcut='${config.shortcut}', display_mode='${config.display_mode}', blur_background=${config.blur_background}, blur_mode='${config.blur_mode}', autostart_prompted=${config.autostart_prompted}`
         );
         const valid =
           config.wallpaper_directory !== '' &&
@@ -38,6 +40,12 @@ export default function App() {
           setDisplayMode('shard');
         } else {
           setDisplayMode('carousel');
+        }
+        if (typeof config.blur_background === 'boolean') {
+          setBlurBackground(config.blur_background);
+        }
+        if (config.blur_mode) {
+          setBlurMode(config.blur_mode);
         }
         if (valid && !config.autostart_prompted) {
           setShowAutostartPrompt(true);
@@ -56,6 +64,12 @@ export default function App() {
         .then((config) => {
           if (config.display_mode) {
             setDisplayMode(config.display_mode === 'shard' ? 'shard' : 'carousel');
+          }
+          if (typeof config.blur_background === 'boolean') {
+            setBlurBackground(config.blur_background);
+          }
+          if (config.blur_mode) {
+            setBlurMode(config.blur_mode);
           }
         })
         .catch(() => {});
@@ -134,12 +148,16 @@ export default function App() {
           images={images}
           onSetWallpaper={handleSetWallpaper}
           onRefresh={handleRefresh}
+          blurBackground={blurBackground}
+          blurMode={blurMode}
         />
       ) : (
         <Coverflow
           images={images}
           onSetWallpaper={handleSetWallpaper}
           onRefresh={handleRefresh}
+          blurBackground={blurBackground}
+          blurMode={blurMode}
         />
       )}
     </>

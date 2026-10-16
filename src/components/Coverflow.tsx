@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { convertFileSrc, openSettingsWindow, logImageSwitch, logFrontend } from '../lib/tauri';
-import type { WallpaperEntry } from '../types';
+import type { WallpaperEntry, BlurMode } from '../types';
 import './Coverflow.css';
 
 interface CoverflowProps {
   images: WallpaperEntry[];
   onSetWallpaper: (entry: WallpaperEntry) => void;
   onRefresh?: () => Promise<WallpaperEntry[] | null> | Promise<void> | void;
+  blurBackground?: boolean;
+  blurMode?: BlurMode;
 }
 
 const VISIBLE_RADIUS = 6;
@@ -14,7 +17,13 @@ const STRIP_WIDTH = 64; // px
 const GAP = 10; // px
 const LRU_CAPACITY = 8;
 
-export default function Coverflow({ images, onSetWallpaper, onRefresh }: CoverflowProps) {
+export default function Coverflow({
+  images,
+  onSetWallpaper,
+  onRefresh,
+  blurBackground = false,
+  blurMode = 'fullscreen',
+}: CoverflowProps) {
   const [virtualIndex, setVirtualIndex] = useState(0);
   const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
   const [loadedHighResMap, setLoadedHighResMap] = useState<Record<string, boolean>>({});
@@ -251,15 +260,31 @@ export default function Coverflow({ images, onSetWallpaper, onRefresh }: Coverfl
     });
   }
 
+    const blurClass = blurBackground
+    ? blurMode === 'window'
+      ? 'blur-window'
+      : 'blur-fullscreen'
+    : '';
+
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget && blurBackground && blurMode === 'fullscreen') {
+      getCurrentWindow().hide();
+    }
+  };
+
   return (
-    <div className="gallery-viewport" onWheel={handleWheel}>
+    <div
+      className={`gallery-viewport ${blurClass}`}
+      onWheel={handleWheel}
+      onClick={handleBackdropClick}
+    >
       {refreshNotification && (
         <div className="gallery-toast">
           <span className="gallery-toast-dot" />
           <span>{refreshNotification}</span>
         </div>
       )}
-      <div className="gallery-stage">
+      <div className="gallery-stage" onClick={handleBackdropClick}>
         {slots.map((slot) => {
           const fileExt = slot.img.filename.split('.').pop()?.toUpperCase() || 'IMG';
           const isHighResReady = loadedHighResMap[slot.img.path];

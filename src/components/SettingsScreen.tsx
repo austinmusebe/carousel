@@ -8,7 +8,7 @@ import {
   quitApp,
   logFrontend,
 } from '../lib/tauri';
-import type { DisplayMode } from '../types';
+import type { DisplayMode, BlurMode } from '../types';
 import './SettingsScreen.css';
 
 const SHORTCUT_PRESETS = [
@@ -23,6 +23,8 @@ export default function SettingsScreen() {
   const [shortcut, setShortcut] = useState('Alt+W');
   const [autostart, setAutostart] = useState(false);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('carousel');
+  const [blurBackground, setBlurBackground] = useState(false);
+  const [blurMode, setBlurMode] = useState<BlurMode>('fullscreen');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -34,6 +36,8 @@ export default function SettingsScreen() {
         setDirectory(cfg.wallpaper_directory || '');
         setShortcut(cfg.shortcut || 'Alt+W');
         setDisplayMode(cfg.display_mode || 'carousel');
+        setBlurBackground(cfg.blur_background ?? false);
+        setBlurMode(cfg.blur_mode || 'fullscreen');
         try {
           const enabled = await isAutostartEnabled();
           setAutostart(enabled);
@@ -70,7 +74,14 @@ export default function SettingsScreen() {
     setStatusMessage(null);
     setIsError(false);
     try {
-      await saveSettings(shortcut, directory, autostart, displayMode);
+      await saveSettings(
+        shortcut,
+        directory,
+        autostart,
+        displayMode,
+        blurBackground,
+        blurMode
+      );
       setStatusMessage('Settings saved successfully');
       setIsError(false);
       setTimeout(() => {
@@ -224,6 +235,76 @@ export default function SettingsScreen() {
               </div>
             </button>
           </div>
+        </section>
+
+        {/* Section: Background Blur */}
+        <section className="settings-section">
+          <div className="section-meta">
+            <label className="section-label">Background Blur</label>
+            <p className="section-hint">
+              Blur everything behind the switcher when open using native Windows Acrylic.
+            </p>
+          </div>
+
+          <label className="switch-row">
+            <div className="switch-wrapper">
+              <input
+                type="checkbox"
+                className="switch-input"
+                id="blur-toggle"
+                checked={blurBackground}
+                onChange={(e) => setBlurBackground(e.target.checked)}
+              />
+              <span className="switch-track" />
+            </div>
+            <span className="switch-label-text">
+              {blurBackground ? 'Background blur (enabled)' : 'Background blur (disabled)'}
+            </span>
+          </label>
+
+          {blurBackground && (
+            <div className="display-options-grid blur-options-grid">
+              <button
+                type="button"
+                className={`display-option-card ${blurMode === 'fullscreen' ? 'active' : ''}`}
+                onClick={() => setBlurMode('fullscreen')}
+              >
+                <div className="display-option-preview">
+                  <div className="preview-blur-screen">
+                    <div className="preview-blur-center-box" />
+                  </div>
+                </div>
+                <div className="display-option-info">
+                  <div className="display-option-header">
+                    <span className="display-option-title">Fullscreen</span>
+                    <span className="display-option-badge">Full Screen</span>
+                  </div>
+                  <p className="display-option-desc">
+                    Blurs your entire display, desktop icons, and background apps.
+                  </p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                className={`display-option-card ${blurMode === 'window' ? 'active' : ''}`}
+                onClick={() => setBlurMode('window')}
+              >
+                <div className="display-option-preview">
+                  <div className="preview-blur-window-box" />
+                </div>
+                <div className="display-option-info">
+                  <div className="display-option-header">
+                    <span className="display-option-title">Window Only</span>
+                    <span className="display-option-badge">1200×700</span>
+                  </div>
+                  <p className="display-option-desc">
+                    Blurs only the rectangular window region directly behind the carousel.
+                  </p>
+                </div>
+              </button>
+            </div>
+          )}
         </section>
 
         {/* Section: In-Gallery Shortcuts (Non-modifiable) */}

@@ -293,6 +293,52 @@
   box-shadow: 0 0 12px rgba(255, 255, 255, 0.35);
 }
 
+/* Blur Options Graphic */
+.blur-options-grid {
+  margin-top: 10px;
+}
+
+.preview-blur-screen {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  position: relative;
+}
+
+.preview-blur-center-box {
+  width: 44px;
+  height: 24px;
+  background: #71717a;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.2s ease;
+}
+
+.display-option-card.active .preview-blur-center-box {
+  background: #ffffff;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.35);
+}
+
+.preview-blur-window-box {
+  width: 60px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s ease;
+}
+
+.display-option-card.active .preview-blur-window-box {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: #ffffff;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.35);
+}
+
 .display-option-info {
   display: flex;
   flex-direction: column;

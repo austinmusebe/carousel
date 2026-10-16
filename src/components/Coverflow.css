@@ -21,6 +21,21 @@
   );
 }
 
+.gallery-viewport.blur-window {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(18, 18, 24, 0.4);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
+.gallery-viewport.blur-fullscreen {
+  background: rgba(12, 12, 16, 0.35);
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
 
 .gallery-stage {
   position: absolute;

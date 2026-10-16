@@ -7,6 +7,10 @@ fn default_display_mode() -> String {
     "carousel".to_string()
 }
 
+fn default_blur_mode() -> String {
+    "fullscreen".to_string()
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {
     pub shortcut: String,
@@ -17,6 +21,10 @@ pub struct AppConfig {
     pub autostart_prompted: bool,
     #[serde(default = "default_display_mode")]
     pub display_mode: String,
+    #[serde(default)]
+    pub blur_background: bool,
+    #[serde(default = "default_blur_mode")]
+    pub blur_mode: String,
 }
 
 impl Default for AppConfig {
@@ -27,6 +35,8 @@ impl Default for AppConfig {
             autostart: false,
             autostart_prompted: false,
             display_mode: default_display_mode(),
+            blur_background: false,
+            blur_mode: default_blur_mode(),
         }
     }
 }
