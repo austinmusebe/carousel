@@ -13,7 +13,12 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["protocol-asset", "tray-icon", "image-png", "image-ico"] }
+tauri = { version = "2", features = [
+    "protocol-asset",
+    "tray-icon",
+    "image-png",
+    "image-ico",
+] }
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-autostart = "2"
@@ -29,12 +34,17 @@ windows-sys = { version = "0.59", features = [
     "Win32_Foundation",
 ] }
 
+[profile.dev]
+incremental = true
+opt-level = 1
+
 [profile.dev.package."*"]
-opt-level = 3
+opt-level = 1
+debug = false
 
 [profile.release]
-codegen-units = 1
 lto = true
+codegen-units = 4
 opt-level = 3
 panic = "abort"
 strip = true

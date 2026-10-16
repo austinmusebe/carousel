@@ -6,8 +6,8 @@ use std::fs;
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
 
-const THUMB_WIDTH: u32 = 320;
-const THUMB_HEIGHT: u32 = 200;
+const THUMB_WIDTH: u32 = 720;
+const THUMB_HEIGHT: u32 = 450;
 const SUPPORTED_EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "webp"];
 
 #[derive(Debug, Clone, Serialize)]
