@@ -12,6 +12,7 @@ interface CoverflowProps {
 const VISIBLE_RADIUS = 6;
 const STRIP_WIDTH = 64; // px
 const GAP = 10; // px
+const LRU_CAPACITY = 8;
 
 export default function Coverflow({ images, onSetWallpaper, onRefresh }: CoverflowProps) {
   const [virtualIndex, setVirtualIndex] = useState(0);
@@ -52,6 +53,19 @@ export default function Coverflow({ images, onSetWallpaper, onRefresh }: Coverfl
     }, 60);
     return () => clearTimeout(timer);
   }, [activeActualIndex]);
+
+  // Retain decoded textures in an LRU keep-alive cache so Chromium doesn't purge GPU textures on navigation
+  const [retainedPaths, setRetainedPaths] = useState<string[]>([]);
+  useEffect(() => {
+    if (count === 0) return;
+    const activeImg = images[debouncedIndex];
+    if (!activeImg) return;
+    setRetainedPaths((prev) => {
+      const filtered = prev.filter((p) => p !== activeImg.path);
+      const next = [activeImg.path, ...filtered];
+      return next.length > LRU_CAPACITY ? next.slice(0, LRU_CAPACITY) : next;
+    });
+  }, [debouncedIndex, images, count]);
 
   // Log image-to-image switch latency
   useEffect(() => {
@@ -94,9 +108,11 @@ export default function Coverflow({ images, onSetWallpaper, onRefresh }: Coverfl
     });
   }, [activeActualIndex, count, images]);
 
-  const handleHighResLoaded = useCallback((path: string, filename: string) => {
+  const handleHighResLoaded = useCallback((path: string, filename?: string) => {
     setLoadedHighResMap((prev) => (prev[path] ? prev : { ...prev, [path]: true }));
-    console.log(`[Asset] High-res rendered: ${filename}`);
+    if (filename) {
+      console.log(`[Asset] High-res rendered: ${filename}`);
+    }
   }, []);
 
   const [refreshNotification, setRefreshNotification] = useState<string | null>(null);
@@ -221,6 +237,8 @@ export default function Coverflow({ images, onSetWallpaper, onRefresh }: Coverfl
       xOffset = -(centerWidth / 2 + GAP + (absOffset - 1) * (STRIP_WIDTH + GAP) + STRIP_WIDTH / 2);
     }
 
+    const isRetained = retainedPaths.includes(img.path);
+
     slots.push({
       vIndex,
       actualIdx,
@@ -229,7 +247,7 @@ export default function Coverflow({ images, onSetWallpaper, onRefresh }: Coverfl
       xOffset,
       cardWidth,
       isActive: offset === 0,
-      shouldLoadHighRes: offset === 0 && debouncedIndex === actualIdx,
+      shouldLoadHighRes: offset === 0 && (isRetained || debouncedIndex === actualIdx),
     });
   }
 
@@ -307,6 +325,32 @@ export default function Coverflow({ images, onSetWallpaper, onRefresh }: Coverfl
             </div>
           );
         })}
+      </div>
+      {/* Offscreen Keep-Alive: Retains decoded GPU textures in DOM to eliminate re-decoding lag */}
+      <div
+        className="texture-keepalive"
+        aria-hidden="true"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '1px',
+          height: '1px',
+          opacity: 0,
+          pointerEvents: 'none',
+          overflow: 'hidden',
+          zIndex: -1,
+        }}
+      >
+        {retainedPaths.map((path) => (
+          <img
+            key={path}
+            src={convertFileSrc(path)}
+            alt=""
+            decoding="async"
+            onLoad={() => handleHighResLoaded(path)}
+          />
+        ))}
       </div>
     </div>
   );
