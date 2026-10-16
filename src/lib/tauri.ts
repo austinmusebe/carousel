@@ -30,7 +30,8 @@ export async function saveSettings(
   autostart: boolean,
   displayMode: string = 'carousel',
   blurBackground: boolean = false,
-  blurMode: string = 'fullscreen'
+  blurMode: string = 'fullscreen',
+  blurSource: string = 'wallpaper'
 ): Promise<void> {
   return invoke('save_settings', {
     shortcut,
@@ -39,6 +40,7 @@ export async function saveSettings(
     displayMode,
     blurBackground,
     blurMode,
+    blurSource,
   });
 }
 
@@ -56,6 +58,10 @@ export async function toggleMainWindow(): Promise<void> {
 
 export async function openSettingsWindow(): Promise<void> {
   return invoke('open_settings_window');
+}
+
+export async function getBackdrop(): Promise<string | null> {
+  return invoke<string | null>('get_backdrop');
 }
 
 export async function quitApp(): Promise<void> {

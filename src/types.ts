@@ -9,6 +9,7 @@ export interface WallpaperEntry {
 
 export type DisplayMode = 'carousel' | 'shard';
 export type BlurMode = 'fullscreen' | 'window';
+export type BlurSource = 'screen' | 'wallpaper';
 
 export interface AppConfig {
   shortcut: string;
@@ -18,5 +19,6 @@ export interface AppConfig {
   display_mode?: DisplayMode;
   blur_background?: boolean;
   blur_mode?: BlurMode;
+  blur_source?: BlurSource;
 }
 

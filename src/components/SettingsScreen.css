@@ -298,6 +298,26 @@
   margin-top: 10px;
 }
 
+.settings-subsection-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 14px;
+  margin-bottom: 6px;
+}
+
+.settings-subsection-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #d4d4d8;
+  letter-spacing: -0.01em;
+}
+
+.settings-subsection-hint {
+  font-size: 11px;
+  color: #71717a;
+}
+
 .preview-blur-screen {
   width: 100%;
   height: 100%;
@@ -309,6 +329,50 @@
   position: relative;
 }
 
+.preview-blur-desktop-dots {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.preview-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.preview-blur-wallpaper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.preview-blur-ambient-glow {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.45) 0%, rgba(168, 85, 247, 0.25) 50%, transparent 75%);
+  filter: blur(8px);
+  transition: all 0.2s ease;
+}
+
+.display-option-card.active .preview-blur-ambient-glow {
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.7) 0%, rgba(168, 85, 247, 0.45) 50%, transparent 75%);
+  filter: blur(6px);
+  transform: scale(1.2);
+}
+
 .preview-blur-center-box {
   width: 44px;
   height: 24px;
@@ -316,6 +380,8 @@
   border-radius: 3px;
   border: 1px solid rgba(255, 255, 255, 0.3);
   transition: all 0.2s ease;
+  position: relative;
+  z-index: 1;
 }
 
 .display-option-card.active .preview-blur-center-box {

@@ -1,3 +1,4 @@
+mod capture;
 mod config;
 mod logger;
 mod scanner;
@@ -10,7 +11,7 @@ use std::sync::Mutex;
 use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::window::{Effect, EffectState, EffectsBuilder};
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 
 fn apply_window_blur_and_size(window: &tauri::WebviewWindow, config: &AppConfig) {
     if config.blur_background {
@@ -28,7 +29,7 @@ fn apply_window_blur_and_size(window: &tauri::WebviewWindow, config: &AppConfig)
 
         let _ = window.set_effects(
             EffectsBuilder::new()
-                .effects(vec![Effect::Acrylic, Effect::Blur])
+                .effects(vec![Effect::Blur, Effect::Acrylic])
                 .state(EffectState::Active)
                 .build(),
         );
@@ -44,6 +45,7 @@ pub struct AppState {
     pub config: Mutex<AppConfig>,
     pub prevent_hide: AtomicBool,
     pub last_shown: Mutex<std::time::Instant>,
+    pub backdrop: Mutex<Option<String>>,
 }
 
 #[cfg(target_os = "windows")]
@@ -91,6 +93,25 @@ fn toggle_main_window_internal(app: &tauri::AppHandle) {
             *state.last_shown.lock().unwrap() = std::time::Instant::now();
             let config = state.config.lock().unwrap().clone();
             apply_window_blur_and_size(&window, &config);
+
+            #[cfg(target_os = "windows")]
+            if config.blur_background && config.blur_source == "screen" {
+                if let Ok(Some(monitor)) = window.current_monitor() {
+                    let pos = monitor.position();
+                    let size = monitor.size();
+                    let (cap_x, cap_y, cap_w, cap_h) = if config.blur_mode == "fullscreen" {
+                        (pos.x, pos.y, size.width as i32, size.height as i32)
+                    } else {
+                        let cx = pos.x + (size.width as i32 - 1200) / 2;
+                        let cy = pos.y + (size.height as i32 - 700) / 2;
+                        (cx, cy, 1200, 700)
+                    };
+                    if let Some(b64) = capture::capture_monitor_thumbnail(cap_x, cap_y, cap_w, cap_h) {
+                        *state.backdrop.lock().unwrap() = Some(b64);
+                        let _ = window.emit("backdrop-updated", ());
+                    }
+                }
+            }
 
             if let Err(e) = window.show() {
                 app_error!("[Toggle] Failed window.show(): {}", e);
@@ -235,7 +256,10 @@ fn set_autostart(
         app_info!("[Autostart] Enabled successfully");
     } else if app.autolaunch().is_enabled().unwrap_or(false) {
         if let Err(e) = app.autolaunch().disable() {
-            app_warn!("[Autostart] Failed to disable (ignoring if already not registered): {}", e);
+            app_warn!(
+                "[Autostart] Failed to disable (ignoring if already not registered): {}",
+                e
+            );
         } else {
             app_info!("[Autostart] Disabled successfully");
         }
@@ -250,6 +274,7 @@ fn set_autostart(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 fn save_settings(
     app: tauri::AppHandle,
     state: tauri::State<'_, AppState>,
@@ -259,6 +284,7 @@ fn save_settings(
     display_mode: String,
     blur_background: bool,
     blur_mode: String,
+    blur_source: Option<String>,
 ) -> Result<(), String> {
     use tauri_plugin_autostart::ManagerExt;
     if autostart {
@@ -286,6 +312,11 @@ fn save_settings(
         "window".to_string()
     } else {
         "fullscreen".to_string()
+    };
+    config.blur_source = if blur_source.as_deref() == Some("screen") {
+        "screen".to_string()
+    } else {
+        "wallpaper".to_string()
     };
     config.save(&app);
 
@@ -347,6 +378,11 @@ fn quit_app(app: tauri::AppHandle) {
 #[tauri::command]
 fn set_prevent_hide(state: tauri::State<'_, AppState>, prevent: bool) {
     state.prevent_hide.store(prevent, Ordering::SeqCst);
+}
+
+#[tauri::command]
+fn get_backdrop(state: tauri::State<'_, AppState>) -> Option<String> {
+    state.backdrop.lock().unwrap().clone()
 }
 
 #[tauri::command]
@@ -426,6 +462,7 @@ pub fn run() {
                 config: Mutex::new(config.clone()),
                 prevent_hide: AtomicBool::new(false),
                 last_shown: Mutex::new(std::time::Instant::now()),
+                backdrop: Mutex::new(None),
             });
 
             // Extend asset protocol scope for the wallpaper directory
@@ -579,6 +616,7 @@ pub fn run() {
             open_settings_window,
             quit_app,
             set_prevent_hide,
+            get_backdrop,
             log_image_switch,
             log_frontend,
         ])

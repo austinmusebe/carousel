@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { convertFileSrc, openSettingsWindow, logImageSwitch, logFrontend } from '../lib/tauri';
-import type { WallpaperEntry, BlurMode } from '../types';
+import type { WallpaperEntry, BlurMode, BlurSource } from '../types';
 import './Coverflow.css';
 
 interface CoverflowProps {
@@ -10,6 +10,8 @@ interface CoverflowProps {
   onRefresh?: () => Promise<WallpaperEntry[] | null> | Promise<void> | void;
   blurBackground?: boolean;
   blurMode?: BlurMode;
+  blurSource?: BlurSource;
+  backdropImage?: string | null;
 }
 
 const VISIBLE_RADIUS = 6;
@@ -23,6 +25,8 @@ export default function Coverflow({
   onRefresh,
   blurBackground = false,
   blurMode = 'fullscreen',
+  blurSource = 'wallpaper',
+  backdropImage = null,
 }: CoverflowProps) {
   const [virtualIndex, setVirtualIndex] = useState(0);
   const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
@@ -278,6 +282,37 @@ export default function Coverflow({
       onWheel={handleWheel}
       onClick={handleBackdropClick}
     >
+      {blurBackground && (
+        blurSource === 'wallpaper' ? (
+          images[activeActualIndex] && (
+            <div className="wallpaper-backdrop-container">
+              <img
+                src={`data:image/jpeg;base64,${images[activeActualIndex].thumbnail}`}
+                alt=""
+                className="desktop-backdrop wallpaper-backdrop"
+                draggable={false}
+              />
+              {loadedHighResMap[images[activeActualIndex].path] && (
+                <img
+                  src={convertFileSrc(images[activeActualIndex].path)}
+                  alt=""
+                  className="desktop-backdrop wallpaper-backdrop high-res"
+                  draggable={false}
+                />
+              )}
+            </div>
+          )
+        ) : (
+          backdropImage && (
+            <img
+              src={`data:image/jpeg;base64,${backdropImage}`}
+              alt=""
+              className="desktop-backdrop"
+              draggable={false}
+            />
+          )
+        )
+      )}
       {refreshNotification && (
         <div className="gallery-toast">
           <span className="gallery-toast-dot" />

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { listen } from '@tauri-apps/api/event';
 import SetupScreen from './components/SetupScreen';
 import SettingsScreen from './components/SettingsScreen';
 import AutostartPromptModal from './components/AutostartPromptModal';
@@ -7,8 +8,8 @@ import Coverflow from './components/Coverflow';
 import Shardflow from './components/Shardflow';
 import { useWallpapers } from './hooks/useWallpapers';
 import { useKeyboardActions } from './hooks/useKeyboardActions';
-import { getConfig, setWallpaper, logFrontend } from './lib/tauri';
-import type { WallpaperEntry, DisplayMode, BlurMode } from './types';
+import { getConfig, setWallpaper, logFrontend, getBackdrop } from './lib/tauri';
+import type { WallpaperEntry, DisplayMode, BlurMode, BlurSource } from './types';
 import './App.css';
 
 export default function App() {
@@ -21,11 +22,33 @@ export default function App() {
   const [displayMode, setDisplayMode] = useState<DisplayMode>('carousel');
   const [blurBackground, setBlurBackground] = useState<boolean>(false);
   const [blurMode, setBlurMode] = useState<BlurMode>('fullscreen');
+  const [blurSource, setBlurSource] = useState<BlurSource>('wallpaper');
+  const [backdropImage, setBackdropImage] = useState<string | null>(null);
   const { images, loading, error, refresh } = useWallpapers();
 
-  // Check config on mount
+  // Listen for backdrop updates from backend
+  useEffect(() => {
+    const unlistenPromise = listen('backdrop-updated', () => {
+      getBackdrop()
+        .then((img) => {
+          if (img) setBackdropImage(img);
+        })
+        .catch(() => {});
+    });
+    return () => {
+      unlistenPromise.then((unlisten) => unlisten());
+    };
+  }, []);
+
+  // Check config and backdrop on mount
   useEffect(() => {
     logFrontend('INFO', `[App] Mounted. hash='${window.location.hash}'`);
+    getBackdrop()
+      .then((img) => {
+        if (img) setBackdropImage(img);
+      })
+      .catch(() => {});
+
     getConfig()
       .then((config) => {
         logFrontend(
@@ -47,6 +70,9 @@ export default function App() {
         if (config.blur_mode) {
           setBlurMode(config.blur_mode);
         }
+        if (config.blur_source) {
+          setBlurSource(config.blur_source);
+        }
         if (valid && !config.autostart_prompted) {
           setShowAutostartPrompt(true);
         }
@@ -57,9 +83,15 @@ export default function App() {
       });
   }, []);
 
-  // Update display mode and settings on window focus
+  // Update display mode and backdrop on window focus
   useEffect(() => {
     const handleFocus = () => {
+      getBackdrop()
+        .then((img) => {
+          if (img) setBackdropImage(img);
+        })
+        .catch(() => {});
+
       getConfig()
         .then((config) => {
           if (config.display_mode) {
@@ -70,6 +102,9 @@ export default function App() {
           }
           if (config.blur_mode) {
             setBlurMode(config.blur_mode);
+          }
+          if (config.blur_source) {
+            setBlurSource(config.blur_source);
           }
         })
         .catch(() => {});
@@ -150,6 +185,8 @@ export default function App() {
           onRefresh={handleRefresh}
           blurBackground={blurBackground}
           blurMode={blurMode}
+          blurSource={blurSource}
+          backdropImage={backdropImage}
         />
       ) : (
         <Coverflow
@@ -158,6 +195,8 @@ export default function App() {
           onRefresh={handleRefresh}
           blurBackground={blurBackground}
           blurMode={blurMode}
+          blurSource={blurSource}
+          backdropImage={backdropImage}
         />
       )}
     </>

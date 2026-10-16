@@ -11,6 +11,10 @@ fn default_blur_mode() -> String {
     "fullscreen".to_string()
 }
 
+fn default_blur_source() -> String {
+    "wallpaper".to_string()
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {
     pub shortcut: String,
@@ -25,6 +29,8 @@ pub struct AppConfig {
     pub blur_background: bool,
     #[serde(default = "default_blur_mode")]
     pub blur_mode: String,
+    #[serde(default = "default_blur_source")]
+    pub blur_source: String,
 }
 
 impl Default for AppConfig {
@@ -37,6 +43,7 @@ impl Default for AppConfig {
             display_mode: default_display_mode(),
             blur_background: false,
             blur_mode: default_blur_mode(),
+            blur_source: default_blur_source(),
         }
     }
 }

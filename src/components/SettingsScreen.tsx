@@ -8,7 +8,7 @@ import {
   quitApp,
   logFrontend,
 } from '../lib/tauri';
-import type { DisplayMode, BlurMode } from '../types';
+import type { DisplayMode, BlurMode, BlurSource } from '../types';
 import './SettingsScreen.css';
 
 const SHORTCUT_PRESETS = [
@@ -25,6 +25,7 @@ export default function SettingsScreen() {
   const [displayMode, setDisplayMode] = useState<DisplayMode>('carousel');
   const [blurBackground, setBlurBackground] = useState(false);
   const [blurMode, setBlurMode] = useState<BlurMode>('fullscreen');
+  const [blurSource, setBlurSource] = useState<BlurSource>('wallpaper');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -38,6 +39,7 @@ export default function SettingsScreen() {
         setDisplayMode(cfg.display_mode || 'carousel');
         setBlurBackground(cfg.blur_background ?? false);
         setBlurMode(cfg.blur_mode || 'fullscreen');
+        setBlurSource(cfg.blur_source || 'wallpaper');
         try {
           const enabled = await isAutostartEnabled();
           setAutostart(enabled);
@@ -80,7 +82,8 @@ export default function SettingsScreen() {
         autostart,
         displayMode,
         blurBackground,
-        blurMode
+        blurMode,
+        blurSource
       );
       setStatusMessage('Settings saved successfully');
       setIsError(false);
@@ -242,7 +245,7 @@ export default function SettingsScreen() {
           <div className="section-meta">
             <label className="section-label">Background Blur</label>
             <p className="section-hint">
-              Blur everything behind the switcher when open using native Windows Acrylic.
+              Blur everything behind the switcher when open.
             </p>
           </div>
 
@@ -263,47 +266,107 @@ export default function SettingsScreen() {
           </label>
 
           {blurBackground && (
-            <div className="display-options-grid blur-options-grid">
-              <button
-                type="button"
-                className={`display-option-card ${blurMode === 'fullscreen' ? 'active' : ''}`}
-                onClick={() => setBlurMode('fullscreen')}
-              >
-                <div className="display-option-preview">
-                  <div className="preview-blur-screen">
-                    <div className="preview-blur-center-box" />
+            <>
+              <div className="settings-subsection-header">
+                <span className="settings-subsection-title">Blur Source</span>
+                <span className="settings-subsection-hint">Choose what is blurred behind the carousel</span>
+              </div>
+              <div className="display-options-grid blur-options-grid">
+                <button
+                  type="button"
+                  className={`display-option-card ${blurSource === 'screen' ? 'active' : ''}`}
+                  onClick={() => setBlurSource('screen')}
+                >
+                  <div className="display-option-preview">
+                    <div className="preview-blur-screen">
+                      <div className="preview-blur-desktop-dots">
+                        <span className="preview-dot" />
+                        <span className="preview-dot" />
+                        <span className="preview-dot" />
+                      </div>
+                      <div className="preview-blur-center-box" />
+                    </div>
                   </div>
-                </div>
-                <div className="display-option-info">
-                  <div className="display-option-header">
-                    <span className="display-option-title">Fullscreen</span>
-                    <span className="display-option-badge">Full Screen</span>
+                  <div className="display-option-info">
+                    <div className="display-option-header">
+                      <span className="display-option-title">Current Screen</span>
+                      <span className="display-option-badge">Desktop</span>
+                    </div>
+                    <p className="display-option-desc">
+                      Captures and blurs your active desktop and open windows.
+                    </p>
                   </div>
-                  <p className="display-option-desc">
-                    Blurs your entire display, desktop icons, and background apps.
-                  </p>
-                </div>
-              </button>
+                </button>
 
-              <button
-                type="button"
-                className={`display-option-card ${blurMode === 'window' ? 'active' : ''}`}
-                onClick={() => setBlurMode('window')}
-              >
-                <div className="display-option-preview">
-                  <div className="preview-blur-window-box" />
-                </div>
-                <div className="display-option-info">
-                  <div className="display-option-header">
-                    <span className="display-option-title">Window Only</span>
-                    <span className="display-option-badge">1200×700</span>
+                <button
+                  type="button"
+                  className={`display-option-card ${blurSource === 'wallpaper' ? 'active' : ''}`}
+                  onClick={() => setBlurSource('wallpaper')}
+                >
+                  <div className="display-option-preview">
+                    <div className="preview-blur-wallpaper">
+                      <div className="preview-blur-ambient-glow" />
+                      <div className="preview-blur-center-box" />
+                    </div>
                   </div>
-                  <p className="display-option-desc">
-                    Blurs only the rectangular window region directly behind the carousel.
-                  </p>
-                </div>
-              </button>
-            </div>
+                  <div className="display-option-info">
+                    <div className="display-option-header">
+                      <span className="display-option-title">Selected Background</span>
+                      <span className="display-option-badge">Ambient</span>
+                    </div>
+                    <p className="display-option-desc">
+                      Dynamic ambient blur matching the currently highlighted wallpaper.
+                    </p>
+                  </div>
+                </button>
+              </div>
+
+              <div className="settings-subsection-header" style={{ marginTop: '16px' }}>
+                <span className="settings-subsection-title">Blur Area</span>
+                <span className="settings-subsection-hint">Choose display coverage for the blur effect</span>
+              </div>
+              <div className="display-options-grid blur-options-grid">
+                <button
+                  type="button"
+                  className={`display-option-card ${blurMode === 'fullscreen' ? 'active' : ''}`}
+                  onClick={() => setBlurMode('fullscreen')}
+                >
+                  <div className="display-option-preview">
+                    <div className="preview-blur-screen">
+                      <div className="preview-blur-center-box" />
+                    </div>
+                  </div>
+                  <div className="display-option-info">
+                    <div className="display-option-header">
+                      <span className="display-option-title">Fullscreen</span>
+                      <span className="display-option-badge">Full Screen</span>
+                    </div>
+                    <p className="display-option-desc">
+                      Blurs your entire display, desktop icons, and background apps.
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  className={`display-option-card ${blurMode === 'window' ? 'active' : ''}`}
+                  onClick={() => setBlurMode('window')}
+                >
+                  <div className="display-option-preview">
+                    <div className="preview-blur-window-box" />
+                  </div>
+                  <div className="display-option-info">
+                    <div className="display-option-header">
+                      <span className="display-option-title">Window Only</span>
+                      <span className="display-option-badge">1200×700</span>
+                    </div>
+                    <p className="display-option-desc">
+                      Blurs only the rectangular window region directly behind the carousel.
+                    </p>
+                  </div>
+                </button>
+              </div>
+            </>
           )}
         </section>
 
