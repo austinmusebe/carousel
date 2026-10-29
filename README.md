@@ -1,4 +1,4 @@
-# Carousel Wallpaper Changer
+# Carousel
 
 ## 1. Description
 
@@ -24,13 +24,13 @@ Follow these steps to prepare and build the application:
 1. Clone the repository to your local computer:
 
    ```shell
-   git clone https://github.com/dofna/Carousel-Wallpaper-Changer.git
+   git clone https://github.com/austinmusebe/carousel.git
    ```
 
 2. Change to the project directory:
 
    ```shell
-   cd Carousel-Wallpaper-Changer
+   cd carousel
    ```
 
 3. Install the Node.js dependencies:
@@ -75,7 +75,7 @@ To create a release:
 2. Click the `Actions` tab.
 3. Select the `Release` workflow in the left sidebar.
 4. Click `Run workflow`.
-5. Enter the version tag (for example, `v0.1.0`).
+5. Enter the version tag (for example, `v0.1.1` or leave blank to auto-increment).
 6. Click `Run workflow`.
 7. When the build completes, the installer executable is attached to the GitHub Releases page.
 

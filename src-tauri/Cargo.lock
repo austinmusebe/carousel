@@ -404,8 +404,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "carousel-wallpaper-changer"
-version = "0.1.0"
+name = "carousel"
+version = "0.1.1"
 dependencies = [
  "base64 0.22.1",
  "image",

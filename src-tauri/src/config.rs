@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
 
 fn default_display_mode() -> String {
-    "carousel".to_string()
+    "shard".to_string()
 }
 
 fn default_blur_mode() -> String {

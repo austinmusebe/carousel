@@ -19,7 +19,7 @@ export default function App() {
 
   const [hasDirectory, setHasDirectory] = useState<boolean | null>(null);
   const [showAutostartPrompt, setShowAutostartPrompt] = useState(false);
-  const [displayMode, setDisplayMode] = useState<DisplayMode>('carousel');
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('shard');
   const [blurBackground, setBlurBackground] = useState<boolean>(false);
   const [blurMode, setBlurMode] = useState<BlurMode>('fullscreen');
   const [blurSource, setBlurSource] = useState<BlurSource>('wallpaper');
@@ -59,10 +59,10 @@ export default function App() {
           config.wallpaper_directory !== '' &&
           config.wallpaper_directory !== null;
         setHasDirectory(valid);
-        if (config.display_mode === 'shard') {
-          setDisplayMode('shard');
-        } else {
+        if (config.display_mode === 'carousel') {
           setDisplayMode('carousel');
+        } else {
+          setDisplayMode('shard');
         }
         if (typeof config.blur_background === 'boolean') {
           setBlurBackground(config.blur_background);

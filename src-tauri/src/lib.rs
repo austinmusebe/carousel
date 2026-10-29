@@ -159,6 +159,10 @@ fn toggle_main_window_internal(app: &tauri::AppHandle) {
 fn open_settings_window_internal(app: &tauri::AppHandle) {
     app_info!("[Settings] open_settings_window_internal called");
     if let Some(window) = app.get_webview_window("settings") {
+        if window.is_visible().unwrap_or(false) {
+            app_info!("[Settings] settings window is already visible -> ignoring open request");
+            return;
+        }
         if let Err(e) = window.show() {
             app_error!("[Settings] Failed window.show(): {}", e);
         }

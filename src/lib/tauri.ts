@@ -28,7 +28,7 @@ export async function saveSettings(
   shortcut: string,
   directory: string,
   autostart: boolean,
-  displayMode: string = 'carousel',
+  displayMode: string = 'shard',
   blurBackground: boolean = false,
   blurMode: string = 'fullscreen',
   blurSource: string = 'wallpaper'

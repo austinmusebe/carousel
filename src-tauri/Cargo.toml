@@ -1,12 +1,12 @@
 [package]
-name = "carousel-wallpaper-changer"
-version = "0.1.0"
+name = "carousel"
+version = "0.1.1"
 description = "A Cover Flow wallpaper picker for Windows"
 authors = ["you"]
 edition = "2021"
 
 [lib]
-name = "carousel_wallpaper_changer_lib"
+name = "carousel_lib"
 crate-type = ["cdylib", "rlib"]
 
 [build-dependencies]

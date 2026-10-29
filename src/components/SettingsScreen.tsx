@@ -22,7 +22,7 @@ export default function SettingsScreen() {
   const [directory, setDirectory] = useState('');
   const [shortcut, setShortcut] = useState('Alt+W');
   const [autostart, setAutostart] = useState(false);
-  const [displayMode, setDisplayMode] = useState<DisplayMode>('carousel');
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('shard');
   const [blurBackground, setBlurBackground] = useState(false);
   const [blurMode, setBlurMode] = useState<BlurMode>('fullscreen');
   const [blurSource, setBlurSource] = useState<BlurSource>('wallpaper');
@@ -36,7 +36,7 @@ export default function SettingsScreen() {
       .then(async (cfg) => {
         setDirectory(cfg.wallpaper_directory || '');
         setShortcut(cfg.shortcut || 'Alt+W');
-        setDisplayMode(cfg.display_mode || 'carousel');
+        setDisplayMode(cfg.display_mode || 'shard');
         setBlurBackground(cfg.blur_background ?? false);
         setBlurMode(cfg.blur_mode || 'fullscreen');
         setBlurSource(cfg.blur_source || 'wallpaper');
@@ -209,7 +209,7 @@ export default function SettingsScreen() {
               <div className="display-option-info">
                 <div className="display-option-header">
                   <span className="display-option-title">Carousel</span>
-                  <span className="display-option-badge">Default</span>
+                  <span className="display-option-badge">Classic</span>
                 </div>
                 <p className="display-option-desc">
                   Classic horizontal card stack with center focus.
@@ -230,7 +230,7 @@ export default function SettingsScreen() {
               <div className="display-option-info">
                 <div className="display-option-header">
                   <span className="display-option-title">Shard Display</span>
-                  <span className="display-option-badge">Dynamic</span>
+                  <span className="display-option-badge">Default</span>
                 </div>
                 <p className="display-option-desc">
                   Modern angled parallelogram shards cut at a dynamic slant.

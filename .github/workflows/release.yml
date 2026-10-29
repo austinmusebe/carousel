@@ -1,12 +1,15 @@
 name: Release
 
 on:
+  push:
+    tags:
+      - "v*"
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version tag (e.g. v0.1.0)"
-        required: true
-        default: "v0.1.0"
+        description: "Release version tag (optional, e.g. v0.1.1 - leave blank to auto-increment)"
+        required: false
+        default: ""
         type: string
 
 permissions:
@@ -19,6 +22,54 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine next version
+        id: versioning
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $inputVer = "${{ inputs.version }}".Trim()
+          if ($inputVer -ne "") {
+            $tag = if ($inputVer.StartsWith("v")) { $inputVer } else { "v$inputVer" }
+            $ver = $tag.TrimStart("v")
+          } elseif ("${{ github.ref_type }}" -eq "tag" -and "${{ github.ref_name }}" -ne "") {
+            $tag = "${{ github.ref_name }}"
+            $ver = $tag.TrimStart("v")
+          } else {
+            $latestTag = (git tag -l "v[0-9]*" --sort=-v:refname | Select-Object -First 1)
+            if (-not $latestTag) {
+              try {
+                $headers = @{ "Authorization" = "Bearer $env:GITHUB_TOKEN"; "User-Agent" = "GitHub-Actions" }
+                $rel = Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/releases/latest" -Headers $headers
+                $latestTag = $rel.tag_name
+              } catch {
+                $latestTag = "v0.1.0"
+              }
+            }
+            if (-not $latestTag) { $latestTag = "v0.1.0" }
+            $clean = $latestTag.TrimStart("v")
+            $parts = $clean.Split(".")
+            $major = [int]$parts[0]
+            $minor = if ($parts.Length -gt 1) { [int]$parts[1] } else { 1 }
+            $patch = if ($parts.Length -gt 2) { [int]$parts[2] } else { 0 }
+            $patch++
+            $ver = "$major.$minor.$patch"
+            $tag = "v$ver"
+          }
+          Write-Host "Releasing $tag ($ver)"
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          "version=$ver" >> $env:GITHUB_OUTPUT
+
+          # Sync version into configuration files before build
+          $tauriConf = Get-Content "src-tauri/tauri.conf.json" -Raw | ConvertFrom-Json
+          $tauriConf.version = $ver
+          $tauriConf | ConvertTo-Json -Depth 10 | Set-Content "src-tauri/tauri.conf.json"
+
+          (Get-Content "src-tauri/Cargo.toml") -replace 'version\s*=\s*"[^"]+"', "version = `"$ver`"" | Set-Content "src-tauri/Cargo.toml"
+          (Get-Content "package.json") -replace '"version"\s*:\s*"[^"]+"', "`"version`": `"$ver`"" | Set-Content "package.json"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -42,8 +93,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ inputs.version }}
-          releaseName: "carousel ${{ inputs.version }}"
+          tagName: ${{ steps.versioning.outputs.tag }}
+          releaseName: "carousel ${{ steps.versioning.outputs.tag }}"
           releaseBody: "Release build for Windows. Download the installer executable from the assets below."
           releaseDraft: false
           prerelease: false
