@@ -68,8 +68,13 @@ jobs:
           $tauriConf.version = $ver
           $tauriConf | ConvertTo-Json -Depth 10 | Set-Content "src-tauri/tauri.conf.json"
 
-          (Get-Content "src-tauri/Cargo.toml") -replace 'version\s*=\s*"[^"]+"', "version = `"$ver`"" | Set-Content "src-tauri/Cargo.toml"
-          (Get-Content "package.json") -replace '"version"\s*:\s*"[^"]+"', "`"version`": `"$ver`"" | Set-Content "package.json"
+          $cargoContent = Get-Content "src-tauri/Cargo.toml" -Raw
+          $cargoContent = $cargoContent -replace '(?ms)^(\[package\].*?version\s*=\s*)"[^"]+"', "`$1`"$ver`""
+          Set-Content -Path "src-tauri/Cargo.toml" -Value $cargoContent -NoNewline
+
+          $pkg = Get-Content "package.json" -Raw | ConvertFrom-Json
+          $pkg.version = $ver
+          $pkg | ConvertTo-Json -Depth 5 | Set-Content "package.json"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
