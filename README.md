@@ -2,10 +2,10 @@
 
 ![Carousel](public/showcase.jpg)
 
-### Largely inspired by the wallpaper switcher in [ryoku](https://github.com/Ryoku-dev/ryoku) and [skwd-wall](github.com/liixini/skwd-wall)
+### Largely inspired by the wallpaper switcher in [ryoku](https://github.com/Ryoku-dev/ryoku) and [skwd-wall](https://github.com/liixini/skwd-wall)
 
 [Ryoku-dev/ryoku](https://github.com/Ryoku-dev/ryoku)
-[skwd-wall](github.com/liixini/skwd-wall)
+[skwd-wall](https://github.com/liixini/skwd-wall)
 
 ## 1. Description
 
