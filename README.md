@@ -1,5 +1,7 @@
 # Carousel
 
+![Carousel](public/showcase.jpg)
+
 ## 1. Description
 
 carousel is a desktop application for Windows that allows you to quickly change your wallpaper on the fly.
