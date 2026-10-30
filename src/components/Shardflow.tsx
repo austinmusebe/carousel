@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { convertFileSrc } from '@tauri-apps/api/core';
-import { openSettingsWindow, logImageSwitch, logFrontend } from '../lib/tauri';
+import { openSettingsWindow, logImageSwitch, logFrontend, isSamePath } from '../lib/tauri';
 import type { WallpaperEntry, BlurMode, BlurSource } from '../types';
 import './Shardflow.css';
 
@@ -13,6 +13,7 @@ interface ShardflowProps {
   blurMode?: BlurMode;
   blurSource?: BlurSource;
   backdropImage?: string | null;
+  lastWallpaper?: string | null;
 }
 
 const VISIBLE_RADIUS = 6;
@@ -28,12 +29,48 @@ export default function Shardflow({
   blurMode = 'fullscreen',
   blurSource = 'wallpaper',
   backdropImage = null,
+  lastWallpaper = null,
 }: ShardflowProps) {
-  const [virtualIndex, setVirtualIndex] = useState(0);
+  const findWallpaperIndex = useCallback(
+    (targetPath?: string | null) => {
+      if (!targetPath || images.length === 0) return 0;
+      const idx = images.findIndex((img) => isSamePath(img.path, targetPath));
+      return idx !== -1 ? idx : 0;
+    },
+    [images]
+  );
+
+  const [virtualIndex, setVirtualIndex] = useState(() => findWallpaperIndex(lastWallpaper));
   const [viewportWidth, setViewportWidth] = useState(window.innerWidth);
   const [loadedHighResMap, setLoadedHighResMap] = useState<Record<string, boolean>>({});
 
   const count = images.length;
+
+  // Initial sync if lastWallpaper or images become available after mount
+  const initialSyncDoneRef = useRef(Boolean(lastWallpaper && images.length > 0));
+  useEffect(() => {
+    if (!initialSyncDoneRef.current && images.length > 0 && lastWallpaper) {
+      const targetIdx = findWallpaperIndex(lastWallpaper);
+      if (targetIdx !== 0) {
+        setVirtualIndex(targetIdx);
+      }
+      initialSyncDoneRef.current = true;
+    }
+  }, [images, lastWallpaper, findWallpaperIndex]);
+
+  // Re-sync when window is reopened / reset requested
+  useEffect(() => {
+    const handleReset = (e: Event) => {
+      const customEvent = e as CustomEvent<{ lastWallpaper?: string | null }>;
+      const targetPath = customEvent.detail?.lastWallpaper ?? lastWallpaper;
+      const targetIdx = findWallpaperIndex(targetPath);
+      switchStartRef.current = performance.now();
+      setVirtualIndex(targetIdx);
+    };
+
+    window.addEventListener('reset-to-last-wallpaper', handleReset);
+    return () => window.removeEventListener('reset-to-last-wallpaper', handleReset);
+  }, [findWallpaperIndex, lastWallpaper]);
 
   useEffect(() => {
     logFrontend('INFO', `[Shardflow] Rendered with ${count} images`);

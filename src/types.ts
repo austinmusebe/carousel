@@ -20,5 +20,6 @@ export interface AppConfig {
   blur_background?: boolean;
   blur_mode?: BlurMode;
   blur_source?: BlurSource;
+  last_wallpaper?: string | null;
 }
 

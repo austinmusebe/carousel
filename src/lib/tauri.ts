@@ -4,6 +4,12 @@ import type { WallpaperEntry, AppConfig } from '../types';
 
 export { convertFileSrc };
 
+export function isSamePath(a?: string | null, b?: string | null): boolean {
+  if (!a || !b) return false;
+  const normalize = (p: string) => p.replace(/\\/g, '/').toLowerCase();
+  return normalize(a) === normalize(b);
+}
+
 export async function scanWallpapers(): Promise<WallpaperEntry[]> {
   return invoke<WallpaperEntry[]>('scan_wallpapers');
 }

@@ -24,6 +24,7 @@ export default function App() {
   const [blurMode, setBlurMode] = useState<BlurMode>('fullscreen');
   const [blurSource, setBlurSource] = useState<BlurSource>('wallpaper');
   const [backdropImage, setBackdropImage] = useState<string | null>(null);
+  const [lastWallpaper, setLastWallpaper] = useState<string | null>(null);
   const { images, loading, error, refresh } = useWallpapers();
 
   // Listen for backdrop updates from backend
@@ -73,6 +74,9 @@ export default function App() {
         if (config.blur_source) {
           setBlurSource(config.blur_source);
         }
+        if (config.last_wallpaper) {
+          setLastWallpaper(config.last_wallpaper);
+        }
         if (valid && !config.autostart_prompted) {
           setShowAutostartPrompt(true);
         }
@@ -83,9 +87,9 @@ export default function App() {
       });
   }, []);
 
-  // Update display mode and backdrop on window focus
+  // Update display mode, backdrop, and reset to last wallpaper on window focus / show
   useEffect(() => {
-    const handleFocus = () => {
+    const handleReopen = () => {
       getBackdrop()
         .then((img) => {
           if (img) setBackdropImage(img);
@@ -94,6 +98,9 @@ export default function App() {
 
       getConfig()
         .then((config) => {
+          if (config.last_wallpaper !== undefined) {
+            setLastWallpaper(config.last_wallpaper);
+          }
           if (config.display_mode) {
             setDisplayMode(config.display_mode === 'shard' ? 'shard' : 'carousel');
           }
@@ -106,11 +113,22 @@ export default function App() {
           if (config.blur_source) {
             setBlurSource(config.blur_source);
           }
+          window.dispatchEvent(
+            new CustomEvent('reset-to-last-wallpaper', {
+              detail: { lastWallpaper: config.last_wallpaper },
+            })
+          );
         })
         .catch(() => {});
     };
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
+
+    window.addEventListener('focus', handleReopen);
+    const unlistenPromise = listen('window-shown', handleReopen);
+
+    return () => {
+      window.removeEventListener('focus', handleReopen);
+      unlistenPromise.then((unlisten) => unlisten());
+    };
   }, []);
 
   const handleDirectorySet = useCallback(() => {
@@ -121,6 +139,7 @@ export default function App() {
   const handleSetWallpaper = useCallback(async (entry: WallpaperEntry) => {
     try {
       await setWallpaper(entry.path);
+      setLastWallpaper(entry.path);
       await getCurrentWindow().hide();
     } catch (e) {
       console.error('Failed to set wallpaper:', e);
@@ -187,6 +206,7 @@ export default function App() {
           blurMode={blurMode}
           blurSource={blurSource}
           backdropImage={backdropImage}
+          lastWallpaper={lastWallpaper}
         />
       ) : (
         <Coverflow
@@ -197,6 +217,7 @@ export default function App() {
           blurMode={blurMode}
           blurSource={blurSource}
           backdropImage={backdropImage}
+          lastWallpaper={lastWallpaper}
         />
       )}
     </>

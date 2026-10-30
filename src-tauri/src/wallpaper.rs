@@ -4,7 +4,7 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{
     SPI_SETDESKWALLPAPER, SPIF_SENDCHANGE, SPIF_UPDATEINIFILE, SystemParametersInfoW,
 };
 
-pub fn set_wallpaper(path: &str) -> Result<(), String> {
+pub fn set_wallpaper(path: &str) -> Result<String, String> {
     // Resolve to absolute path
     let abs_path = match std::fs::canonicalize(path) {
         Ok(p) => p,
@@ -19,8 +19,8 @@ pub fn set_wallpaper(path: &str) -> Result<(), String> {
     // Convert to null-terminated wide string
     // canonicalize on Windows returns \\?\C:\... prefix, strip it for SystemParametersInfoW
     let path_str = abs_path.to_string_lossy();
-    let clean_path = path_str.strip_prefix(r"\\?\").unwrap_or(&path_str);
-    let mut wide: Vec<u16> = OsStr::new(clean_path).encode_wide().collect();
+    let clean_path = path_str.strip_prefix(r"\\?\").unwrap_or(&path_str).to_string();
+    let mut wide: Vec<u16> = OsStr::new(&clean_path).encode_wide().collect();
     wide.push(0);
 
     let result = unsafe {
@@ -33,7 +33,7 @@ pub fn set_wallpaper(path: &str) -> Result<(), String> {
     };
 
     if result != 0 {
-        Ok(())
+        Ok(clean_path)
     } else {
         Err(format!(
             "SystemParametersInfoW failed: {}",

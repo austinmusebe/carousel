@@ -31,6 +31,8 @@ pub struct AppConfig {
     pub blur_mode: String,
     #[serde(default = "default_blur_source")]
     pub blur_source: String,
+    #[serde(default)]
+    pub last_wallpaper: Option<String>,
 }
 
 impl Default for AppConfig {
@@ -44,6 +46,7 @@ impl Default for AppConfig {
             blur_background: false,
             blur_mode: default_blur_mode(),
             blur_source: default_blur_source(),
+            last_wallpaper: None,
         }
     }
 }
@@ -113,5 +116,54 @@ impl AppConfig {
             return false;
         }
         std::path::Path::new(&self.wallpaper_directory).is_dir()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_config_has_none_last_wallpaper() {
+        let config = AppConfig::default();
+        assert_eq!(config.last_wallpaper, None);
+        assert_eq!(config.shortcut, "Alt+W");
+        assert_eq!(config.display_mode, "shard");
+    }
+
+    #[test]
+    fn test_deserialize_config_without_last_wallpaper() {
+        let json = r#"{
+            "shortcut": "Ctrl+Alt+W",
+            "wallpaper_directory": "C:\\Wallpapers"
+        }"#;
+        let config: AppConfig = serde_json::from_str(json).expect("should parse");
+        assert_eq!(config.shortcut, "Ctrl+Alt+W");
+        assert_eq!(config.wallpaper_directory, "C:\\Wallpapers");
+        assert_eq!(config.last_wallpaper, None);
+        assert_eq!(config.display_mode, "shard");
+    }
+
+    #[test]
+    fn test_deserialize_config_with_last_wallpaper() {
+        let json = r#"{
+            "shortcut": "Alt+W",
+            "wallpaper_directory": "C:\\Wallpapers",
+            "last_wallpaper": "C:\\Wallpapers\\photo.jpg"
+        }"#;
+        let config: AppConfig = serde_json::from_str(json).expect("should parse");
+        assert_eq!(
+            config.last_wallpaper,
+            Some("C:\\Wallpapers\\photo.jpg".to_string())
+        );
+    }
+
+    #[test]
+    fn test_roundtrip_config_with_last_wallpaper() {
+        let mut config = AppConfig::default();
+        config.last_wallpaper = Some("C:\\Wallpapers\\nature.png".to_string());
+        let json = serde_json::to_string(&config).expect("serialize");
+        let parsed: AppConfig = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(parsed.last_wallpaper, config.last_wallpaper);
     }
 }

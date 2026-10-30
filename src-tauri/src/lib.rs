@@ -118,6 +118,7 @@ fn toggle_main_window_internal(app: &tauri::AppHandle) {
                 app_error!("[Toggle] Failed window.show(): {}", e);
             } else {
                 app_info!("[Toggle] window.show() called successfully");
+                let _ = window.emit("window-shown", ());
             }
             if let Err(e) = window.unminimize() {
                 app_warn!("[Toggle] Failed window.unminimize(): {}", e);
@@ -210,8 +211,17 @@ fn scan_wallpapers(
 }
 
 #[tauri::command]
-fn set_wallpaper(path: String) -> Result<(), String> {
-    wallpaper::set_wallpaper(&path)
+fn set_wallpaper(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, AppState>,
+    path: String,
+) -> Result<(), String> {
+    let clean_path = wallpaper::set_wallpaper(&path)?;
+    let mut config = state.config.lock().map_err(|e| e.to_string())?;
+    config.last_wallpaper = Some(clean_path.clone());
+    config.save(&app);
+    app_info!("[Wallpaper] Wallpaper set and saved to config: '{}'", clean_path);
+    Ok(())
 }
 
 #[tauri::command]
