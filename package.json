@@ -1,7 +1,7 @@
 {
   "name": "carousel",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "dev:verbose": "tauri dev -- -- --verbose",
-    "tauri:verbose": "tauri dev -- -- --verbose"
+    "tauri:verbose": "tauri dev -- -- --verbose",
+    "bump": "node scripts/bump.js",
+    "build:new": "node scripts/bump.js && npm run tauri build"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
