@@ -46,6 +46,7 @@ pub struct AppState {
     pub prevent_hide: AtomicBool,
     pub last_shown: Mutex<std::time::Instant>,
     pub backdrop: Mutex<Option<String>>,
+    pub cache_dir: std::path::PathBuf,
 }
 
 #[cfg(target_os = "windows")]
@@ -197,7 +198,7 @@ fn scan_wallpapers(
         "[Command] scan_wallpapers scanning: '{}'",
         config.wallpaper_directory
     );
-    let res = scanner::scan_directory(&config.wallpaper_directory);
+    let res = scanner::scan_directory(&config.wallpaper_directory, &state.cache_dir);
     match &res {
         Ok(entries) => app_info!(
             "[Command] scan_wallpapers succeeded with {} images",
@@ -235,6 +236,7 @@ fn set_wallpaper_directory(
     if dir_path.is_dir() {
         let _ = scope.allow_directory(dir_path, false);
     }
+    let _ = scope.allow_directory(&state.cache_dir, false);
 
     Ok(())
 }
@@ -334,6 +336,7 @@ fn save_settings(
     if dir_path.is_dir() {
         let _ = scope.allow_directory(dir_path, false);
     }
+    let _ = scope.allow_directory(&state.cache_dir, false);
 
     // Re-register global shortcut
     #[cfg(desktop)]
@@ -461,12 +464,24 @@ pub fn run() {
                 shortcut_str, wallpaper_dir, config.autostart, config.autostart_prompted);
             app_info!("Directory valid: {}, first_launch_prompt: {}", has_valid_dir, needs_first_launch_prompt);
 
+            let cache_dir = app
+                .path()
+                .app_data_dir()
+                .expect("failed to get app data dir")
+                .join("thumbnail-cache");
+            if let Err(e) = std::fs::create_dir_all(&cache_dir) {
+                app_error!("[Cache] Failed to create thumbnail cache dir: {}", e);
+            } else {
+                app_info!("[Cache] Thumbnail cache dir initialized at {:?}", cache_dir);
+            }
+
             // Store config in app state
             app.manage(AppState {
                 config: Mutex::new(config.clone()),
                 prevent_hide: AtomicBool::new(false),
                 last_shown: Mutex::new(std::time::Instant::now()),
                 backdrop: Mutex::new(None),
+                cache_dir: cache_dir.clone(),
             });
 
             // Extend asset protocol scope for the wallpaper directory
@@ -479,6 +494,13 @@ pub fn run() {
                 } else {
                     app_warn!("Wallpaper directory is not a valid directory: '{}'", wallpaper_dir);
                 }
+            }
+
+            // Extend asset protocol scope for the thumbnail cache directory
+            {
+                let scope = app.asset_protocol_scope();
+                let res = scope.allow_directory(&cache_dir, false);
+                app_info!("Asset protocol scope extended to cache dir '{:?}': {:?}", cache_dir, res);
             }
 
             // If no valid directory configured or first launch, show window immediately

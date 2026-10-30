@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { convertFileSrc, openSettingsWindow, logImageSwitch, logFrontend } from '../lib/tauri';
+import { convertFileSrc } from '@tauri-apps/api/core';
+import { openSettingsWindow, logImageSwitch, logFrontend } from '../lib/tauri';
 import type { WallpaperEntry, BlurMode, BlurSource } from '../types';
 import './Shardflow.css';
 
@@ -287,7 +288,7 @@ export default function Shardflow({
           images[activeActualIndex] && (
             <div className="wallpaper-backdrop-container">
               <img
-                src={`data:image/jpeg;base64,${images[activeActualIndex].thumbnail}`}
+                src={convertFileSrc(images[activeActualIndex].thumbnail)}
                 alt=""
                 className="desktop-backdrop wallpaper-backdrop"
                 draggable={false}
@@ -343,7 +344,7 @@ export default function Shardflow({
             >
               {/* Layer 1: Instant RAM thumbnail (always displayed, 0ms latency) */}
               <img
-                src={`data:image/jpeg;base64,${slot.img.thumbnail}`}
+                src={convertFileSrc(slot.img.thumbnail)}
                 alt={slot.img.filename}
                 className="shard-image thumb-layer"
                 draggable={false}

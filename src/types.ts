@@ -1,7 +1,7 @@
 export interface WallpaperEntry {
   filename: string;
   path: string;
-  thumbnail: string; // base64-encoded JPEG, no data: prefix
+  thumbnail: string; // absolute file path to cached JPEG on disk
   width: number;
   height: number;
   file_size: number; // bytes
