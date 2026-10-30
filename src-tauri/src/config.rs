@@ -77,10 +77,12 @@ impl AppConfig {
                     Ok(config) => return config,
                     Err(e) => {
                         eprintln!("Failed to parse config at {:?}: {e}", primary_path);
+                        return Self::default();
                     }
                 },
                 Err(e) => {
                     eprintln!("Failed to read config at {:?}: {e}", primary_path);
+                    return Self::default();
                 }
             }
         }
@@ -96,10 +98,12 @@ impl AppConfig {
                     }
                     Err(e) => {
                         eprintln!("Failed to parse legacy config at {:?}: {e}", legacy_path);
+                        return Self::default();
                     }
                 },
                 Err(e) => {
                     eprintln!("Failed to read legacy config at {:?}: {e}", legacy_path);
+                    return Self::default();
                 }
             }
         }
@@ -141,19 +145,16 @@ impl AppConfig {
             file.sync_all()?;
         }
 
-        if let Err(_e) = fs::rename(&tmp_path, path) {
-            let _ = fs::remove_file(path);
-            if fs::rename(&tmp_path, path).is_err() {
-                let mut file = OpenOptions::new()
-                    .write(true)
-                    .create(true)
-                    .truncate(true)
-                    .open(path)?;
-                file.write_all(content)?;
-                file.flush()?;
-                file.sync_all()?;
-                let _ = fs::remove_file(&tmp_path);
-            }
+        if fs::rename(&tmp_path, path).is_err() {
+            let mut file = OpenOptions::new()
+                .write(true)
+                .create(true)
+                .truncate(true)
+                .open(path)?;
+            file.write_all(content)?;
+            file.flush()?;
+            file.sync_all()?;
+            let _ = fs::remove_file(&tmp_path);
         }
         Ok(())
     }

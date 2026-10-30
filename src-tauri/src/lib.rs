@@ -54,12 +54,13 @@ fn strip_main_window_decorations(window: &tauri::WebviewWindow) {
     use windows_sys::Win32::UI::WindowsAndMessaging::{
         GetWindowLongPtrW, SetWindowLongPtrW, SetWindowPos, GWL_STYLE, SWP_FRAMECHANGED,
         SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER, WS_CAPTION, WS_SYSMENU,
+        WS_THICKFRAME,
     };
     if let Ok(hwnd) = window.hwnd() {
         let hwnd_raw = hwnd.0 as windows_sys::Win32::Foundation::HWND;
         unsafe {
             let style = GetWindowLongPtrW(hwnd_raw, GWL_STYLE);
-            let new_style = style & !(WS_CAPTION as isize) & !(WS_SYSMENU as isize);
+            let new_style = style & !(WS_CAPTION as isize) & !(WS_SYSMENU as isize) & !(WS_THICKFRAME as isize);
             let res = SetWindowLongPtrW(hwnd_raw, GWL_STYLE, new_style);
             let pos_res = SetWindowPos(
                 hwnd_raw,
@@ -71,7 +72,7 @@ fn strip_main_window_decorations(window: &tauri::WebviewWindow) {
                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED,
             );
             app_info!(
-                "[Decorations] Stripped WS_CAPTION/WS_SYSMENU from HWND={:?}, prev_style={:#x}, new_style={:#x}, set_style_res={}, set_pos_res={}",
+                "[Decorations] Stripped WS_CAPTION/WS_SYSMENU/WS_THICKFRAME from HWND={:?}, prev_style={:#x}, new_style={:#x}, set_style_res={}, set_pos_res={}",
                 hwnd.0,
                 style,
                 new_style,
@@ -194,6 +195,9 @@ fn toggle_main_window_internal(app: &tauri::AppHandle) {
 
 fn open_settings_window_internal(app: &tauri::AppHandle) {
     app_info!("[Settings] open_settings_window_internal called");
+    if let Some(main_win) = app.get_webview_window("main") {
+        let _ = main_win.hide();
+    }
     if let Some(window) = app.get_webview_window("settings") {
         if window.is_visible().unwrap_or(false) {
             app_info!("[Settings] settings window is already visible -> ignoring open request");
@@ -664,7 +668,19 @@ pub fn run() {
                                 app_info!("[WindowEvent] 'main' lost focus after grace period ({:.1}ms) -> HIDING window", elapsed.as_secs_f64() * 1000.0);
                                 let _ = window.hide();
                             } else {
-                                app_info!("[WindowEvent] 'main' lost focus within grace period ({:.1}ms <= 400ms) -> IGNORING hide request", elapsed.as_secs_f64() * 1000.0);
+                                app_info!("[WindowEvent] 'main' lost focus within grace period ({:.1}ms <= 400ms) -> scheduling delayed check", elapsed.as_secs_f64() * 1000.0);
+                                let window_clone = window.clone();
+                                std::thread::spawn(move || {
+                                    std::thread::sleep(std::time::Duration::from_millis(450));
+                                    if let Some(state) = window_clone.try_state::<AppState>() {
+                                        let prevent = state.prevent_hide.load(Ordering::SeqCst);
+                                        let is_focused = window_clone.is_focused().unwrap_or(false);
+                                        if !is_focused && !prevent {
+                                            app_info!("[WindowEvent] 'main' delayed grace check: still unfocused -> HIDING window");
+                                            let _ = window_clone.hide();
+                                        }
+                                    }
+                                });
                             }
                         } else {
                             app_info!("[WindowEvent] 'main' lost focus but prevent_hide is active -> NOT hiding");

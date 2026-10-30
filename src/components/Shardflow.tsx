@@ -220,6 +220,7 @@ export default function Shardflow({
         handleRefresh();
       } else if (e.key === 's' || e.key === 'S') {
         e.preventDefault();
+        getCurrentWindow().hide();
         openSettingsWindow();
       }
     };
