@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { listen } from '@tauri-apps/api/event';
 import SetupScreen from './components/SetupScreen';
@@ -25,7 +25,11 @@ export default function App() {
   const [blurSource, setBlurSource] = useState<BlurSource>('wallpaper');
   const [backdropImage, setBackdropImage] = useState<string | null>(null);
   const [lastWallpaper, setLastWallpaper] = useState<string | null>(null);
-  const { images, loading, error, refresh } = useWallpapers();
+  const { images, loading, error, refresh, hasScanned } = useWallpapers(false);
+  const hasTriggeredScanRef = useRef(false);
+  const currentDirRef = useRef<string | null>(null);
+  const errorRef = useRef<string | null>(null);
+  errorRef.current = error;
 
   // Listen for backdrop updates from backend
   useEffect(() => {
@@ -64,6 +68,7 @@ export default function App() {
           config.wallpaper_directory !== '' &&
           config.wallpaper_directory !== null;
         setHasDirectory(valid);
+        currentDirRef.current = config.wallpaper_directory;
         if (config.display_mode === 'carousel') {
           setDisplayMode('carousel');
         } else {
@@ -84,12 +89,21 @@ export default function App() {
         if (valid && !config.autostart_prompted) {
           setShowAutostartPrompt(true);
         }
+
+        // If the window was shown immediately on launch (missing directory or first-launch prompt),
+        // trigger scan immediately. If !valid, SetupScreen handles it once directory is selected.
+        const needsFirstLaunchPrompt = !config.autostart_prompted;
+        if (valid && needsFirstLaunchPrompt && !hasTriggeredScanRef.current) {
+          logFrontend('INFO', '[App] Window shown immediately on first launch, triggering initial scan');
+          hasTriggeredScanRef.current = true;
+          refresh();
+        }
       })
       .catch((e) => {
         logFrontend('ERROR', `[App] Failed to load config: ${e}`);
         setHasDirectory(false);
       });
-  }, []);
+  }, [refresh]);
 
   // Update display mode, backdrop, and reset to last wallpaper on window focus / show
   useEffect(() => {
@@ -122,6 +136,28 @@ export default function App() {
               detail: { lastWallpaper: config.last_wallpaper },
             })
           );
+
+          const valid =
+            config.wallpaper_directory !== '' &&
+            config.wallpaper_directory !== null;
+
+          const dirChanged =
+            currentDirRef.current !== null &&
+            config.wallpaper_directory !== currentDirRef.current;
+          currentDirRef.current = config.wallpaper_directory;
+
+          if (valid) {
+            setHasDirectory(true);
+            const shouldScan = !hasTriggeredScanRef.current || dirChanged || errorRef.current !== null;
+            if (shouldScan) {
+              logFrontend(
+                'INFO',
+                `[App] Window revealed / directory changed -> triggering wallpaper scan (triggered=${hasTriggeredScanRef.current}, dirChanged=${dirChanged}, hadError=${errorRef.current !== null})`
+              );
+              hasTriggeredScanRef.current = true;
+              refresh();
+            }
+          }
         })
         .catch(() => {});
     };
@@ -133,10 +169,16 @@ export default function App() {
       window.removeEventListener('focus', handleReopen);
       unlistenPromise.then((unlisten) => unlisten());
     };
-  }, []);
+  }, [refresh]);
 
   const handleDirectorySet = useCallback(() => {
     setHasDirectory(true);
+    hasTriggeredScanRef.current = true;
+    getConfig()
+      .then((cfg) => {
+        currentDirRef.current = cfg.wallpaper_directory;
+      })
+      .catch(() => {});
     refresh();
   }, [refresh]);
 
@@ -178,7 +220,7 @@ export default function App() {
   }
 
   // Loading wallpapers
-  if (loading) {
+  if (loading || (!hasScanned && hasDirectory)) {
     return (
       <div className="app-loading">
         <div className="loading-spinner" />

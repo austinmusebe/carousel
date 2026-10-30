@@ -228,12 +228,21 @@ export default function Coverflow({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [nextSlide, prevSlide, handleRefresh]);
 
-  // Mouse wheel navigation
+  const lastWheelTimeRef = useRef<number>(0);
+
+  // Mouse wheel navigation with 120ms cooldown guard
   const handleWheel = useCallback((e: React.WheelEvent) => {
+    const now = performance.now();
+    if (now - lastWheelTimeRef.current < 120) {
+      return;
+    }
+
     if (Math.abs(e.deltaX) > 20) {
+      lastWheelTimeRef.current = now;
       if (e.deltaX > 0) nextSlide();
       else prevSlide();
     } else if (Math.abs(e.deltaY) > 30) {
+      lastWheelTimeRef.current = now;
       if (e.deltaY > 0) nextSlide();
       else prevSlide();
     }
