@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import {
   setWallpaperDirectory,
@@ -53,6 +53,19 @@ export default function SetupScreen({ onDirectorySet }: SetupScreenProps) {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (step !== "autostart") return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        handleAutostartChoice(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
+  }, [step]);
 
   if (step === "autostart") {
     return (

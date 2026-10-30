@@ -15,8 +15,19 @@ export default function AutostartPromptModal({
   useEffect(() => {
     // Keep overlay from hiding on accidental click-out during prompt
     setPreventHide(true).catch(console.error);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        handleChoice(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown, true);
+
     return () => {
       setPreventHide(false).catch(console.error);
+      window.removeEventListener("keydown", handleKeyDown, true);
     };
   }, []);
 

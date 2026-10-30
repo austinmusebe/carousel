@@ -29,12 +29,16 @@ export default function App() {
 
   // Listen for backdrop updates from backend
   useEffect(() => {
-    const unlistenPromise = listen('backdrop-updated', () => {
-      getBackdrop()
-        .then((img) => {
-          if (img) setBackdropImage(img);
-        })
-        .catch(() => {});
+    const unlistenPromise = listen<string>('backdrop-updated', (event) => {
+      if (event.payload) {
+        setBackdropImage(event.payload);
+      } else {
+        getBackdrop()
+          .then((img) => {
+            if (img) setBackdropImage(img);
+          })
+          .catch(() => {});
+      }
     });
     return () => {
       unlistenPromise.then((unlisten) => unlisten());

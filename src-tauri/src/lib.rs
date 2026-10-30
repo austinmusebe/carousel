@@ -52,7 +52,8 @@ pub struct AppState {
 #[cfg(target_os = "windows")]
 fn strip_main_window_decorations(window: &tauri::WebviewWindow) {
     use windows_sys::Win32::UI::WindowsAndMessaging::{
-        GetWindowLongPtrW, SetWindowLongPtrW, GWL_STYLE, WS_CAPTION, WS_SYSMENU,
+        GetWindowLongPtrW, SetWindowLongPtrW, SetWindowPos, GWL_STYLE, SWP_FRAMECHANGED,
+        SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER, WS_CAPTION, WS_SYSMENU,
     };
     if let Ok(hwnd) = window.hwnd() {
         let hwnd_raw = hwnd.0 as windows_sys::Win32::Foundation::HWND;
@@ -60,7 +61,23 @@ fn strip_main_window_decorations(window: &tauri::WebviewWindow) {
             let style = GetWindowLongPtrW(hwnd_raw, GWL_STYLE);
             let new_style = style & !(WS_CAPTION as isize) & !(WS_SYSMENU as isize);
             let res = SetWindowLongPtrW(hwnd_raw, GWL_STYLE, new_style);
-            app_info!("[Decorations] Stripped WS_CAPTION/WS_SYSMENU from HWND={:?}, prev_style={:#x}, new_style={:#x}, res={}", hwnd.0, style, new_style, res);
+            let pos_res = SetWindowPos(
+                hwnd_raw,
+                std::ptr::null_mut(),
+                0,
+                0,
+                0,
+                0,
+                SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED,
+            );
+            app_info!(
+                "[Decorations] Stripped WS_CAPTION/WS_SYSMENU from HWND={:?}, prev_style={:#x}, new_style={:#x}, set_style_res={}, set_pos_res={}",
+                hwnd.0,
+                style,
+                new_style,
+                res,
+                pos_res
+            );
         }
     } else {
         app_warn!("[Decorations] Could not get HWND for stripping decorations");
@@ -96,7 +113,7 @@ fn toggle_main_window_internal(app: &tauri::AppHandle) {
             apply_window_blur_and_size(&window, &config);
 
             #[cfg(target_os = "windows")]
-            if config.blur_background && config.blur_source == "screen" {
+            let screen_capture_bounds = if config.blur_background && config.blur_source == "screen" {
                 if let Ok(Some(monitor)) = window.current_monitor() {
                     let pos = monitor.position();
                     let size = monitor.size();
@@ -107,12 +124,13 @@ fn toggle_main_window_internal(app: &tauri::AppHandle) {
                         let cy = pos.y + (size.height as i32 - 700) / 2;
                         (cx, cy, 1200, 700)
                     };
-                    if let Some(b64) = capture::capture_monitor_thumbnail(cap_x, cap_y, cap_w, cap_h) {
-                        *state.backdrop.lock().unwrap() = Some(b64);
-                        let _ = window.emit("backdrop-updated", ());
-                    }
+                    Some((cap_x, cap_y, cap_w, cap_h))
+                } else {
+                    None
                 }
-            }
+            } else {
+                None
+            };
 
             if let Err(e) = window.show() {
                 app_error!("[Toggle] Failed window.show(): {}", e);
@@ -151,6 +169,22 @@ fn toggle_main_window_internal(app: &tauri::AppHandle) {
                         );
                     }
                 }
+            }
+
+            #[cfg(target_os = "windows")]
+            if let Some((cap_x, cap_y, cap_w, cap_h)) = screen_capture_bounds {
+                let app_handle = window.app_handle().clone();
+                let window_clone = window.clone();
+                std::thread::spawn(move || {
+                    if let Some(b64) = capture::capture_monitor_thumbnail(cap_x, cap_y, cap_w, cap_h) {
+                        if let Some(state) = app_handle.try_state::<AppState>() {
+                            if let Ok(mut backdrop) = state.backdrop.lock() {
+                                *backdrop = Some(b64.clone());
+                            }
+                        }
+                        let _ = window_clone.emit("backdrop-updated", b64);
+                    }
+                });
             }
         }
     } else {
@@ -265,11 +299,11 @@ fn set_autostart(
 ) -> Result<(), String> {
     use tauri_plugin_autostart::ManagerExt;
     if enabled {
-        app.autolaunch().enable().map_err(|e| {
-            app_error!("[Autostart] Failed to enable: {}", e);
-            e.to_string()
-        })?;
-        app_info!("[Autostart] Enabled successfully");
+        if let Err(e) = app.autolaunch().enable() {
+            app_warn!("[Autostart] Failed to enable: {}", e);
+        } else {
+            app_info!("[Autostart] Enabled successfully");
+        }
     } else if app.autolaunch().is_enabled().unwrap_or(false) {
         if let Err(e) = app.autolaunch().disable() {
             app_warn!(
@@ -381,6 +415,12 @@ fn open_settings_window(app: tauri::AppHandle) {
 
 fn quit_app_internal(app: &tauri::AppHandle) {
     app_info!("[Quit] Graceful app exit initiated");
+    if let Some(state) = app.try_state::<AppState>() {
+        if let Ok(config) = state.config.lock() {
+            config.save(app);
+            app_info!("[Quit] Flushed config to disk before exit");
+        }
+    }
     for (_label, window) in app.webview_windows() {
         let _ = window.destroy();
     }
@@ -513,25 +553,29 @@ pub fn run() {
                 app_info!("Asset protocol scope extended to cache dir '{:?}': {:?}", cache_dir, res);
             }
 
-            // If no valid directory configured or first launch, show window immediately
-            if !has_valid_dir || needs_first_launch_prompt {
-                app_info!("First launch or missing directory -> showing main window");
-                if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.show();
-                    let _ = window.center();
-                    let _ = window.set_focus();
-                }
-            } else {
-                app_info!("Valid configuration present -> keeping main window hidden until triggered");
-            }
-
-            // --- Win32: Strip title bar on main overlay window ---
+            // --- Win32: Strip title bar and configure main overlay window before showing ---
             #[cfg(target_os = "windows")]
             {
                 if let Some(window) = app.get_webview_window("main") {
                     strip_main_window_decorations(&window);
                     apply_window_blur_and_size(&window, &config);
                 }
+            }
+
+            // If no valid directory configured or first launch, show window immediately
+            if !has_valid_dir || needs_first_launch_prompt {
+                app_info!("First launch or missing directory -> showing main window");
+                if let Some(window) = app.get_webview_window("main") {
+                    #[cfg(target_os = "windows")]
+                    strip_main_window_decorations(&window);
+                    let _ = window.show();
+                    let _ = window.center();
+                    let _ = window.set_focus();
+                    #[cfg(target_os = "windows")]
+                    strip_main_window_decorations(&window);
+                }
+            } else {
+                app_info!("Valid configuration present -> keeping main window hidden until triggered");
             }
 
             // --- System Tray ---

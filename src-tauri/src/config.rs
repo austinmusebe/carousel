@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
-use std::fs;
-use std::path::PathBuf;
+use std::fs::{self, OpenOptions};
+use std::io::Write;
+use std::path::{Path, PathBuf};
 use tauri::{AppHandle, Manager};
 
 fn default_display_mode() -> String {
@@ -57,52 +58,118 @@ impl AppConfig {
             .path()
             .app_config_dir()
             .expect("failed to get app config dir");
+        config_dir.join("carousel.json")
+    }
+
+    pub fn legacy_config_path(app: &AppHandle) -> PathBuf {
+        let config_dir = app
+            .path()
+            .app_config_dir()
+            .expect("failed to get app config dir");
         config_dir.join("config.json")
     }
 
     pub fn load(app: &AppHandle) -> Self {
-        let path = Self::config_path(app);
-        if path.exists() {
-            match fs::read_to_string(&path) {
+        let primary_path = Self::config_path(app);
+        if primary_path.exists() {
+            match fs::read_to_string(&primary_path) {
                 Ok(content) => match serde_json::from_str::<AppConfig>(&content) {
                     Ok(config) => return config,
                     Err(e) => {
-                        eprintln!("Failed to parse config: {e}, using defaults");
+                        eprintln!("Failed to parse config at {:?}: {e}", primary_path);
                     }
                 },
                 Err(e) => {
-                    eprintln!("Failed to read config: {e}, using defaults");
+                    eprintln!("Failed to read config at {:?}: {e}", primary_path);
                 }
             }
-        } else if let Some(appdata) = path.parent().and_then(|p| p.parent()) {
+        }
+
+        let legacy_path = Self::legacy_config_path(app);
+        if legacy_path.exists() {
+            match fs::read_to_string(&legacy_path) {
+                Ok(content) => match serde_json::from_str::<AppConfig>(&content) {
+                    Ok(config) => {
+                        eprintln!("[Config] Migrated config from {:?}", legacy_path);
+                        config.save(app);
+                        return config;
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to parse legacy config at {:?}: {e}", legacy_path);
+                    }
+                },
+                Err(e) => {
+                    eprintln!("Failed to read legacy config at {:?}: {e}", legacy_path);
+                }
+            }
+        }
+
+        if let Some(appdata) = primary_path.parent().and_then(|p| p.parent()) {
             // Migration fallback: check legacy folder from before rebranding to "carousel"
-            let legacy_path = appdata
+            let old_brand_path = appdata
                 .join("com.carousel-wallpaper-changer.app")
                 .join("config.json");
-            if legacy_path.exists() {
-                if let Ok(content) = fs::read_to_string(&legacy_path) {
+            if old_brand_path.exists() {
+                if let Ok(content) = fs::read_to_string(&old_brand_path) {
                     if let Ok(config) = serde_json::from_str::<AppConfig>(&content) {
-                        eprintln!("[Config] Migrated legacy config from {:?}", legacy_path);
+                        eprintln!("[Config] Migrated old brand config from {:?}", old_brand_path);
                         config.save(app);
                         return config;
                     }
                 }
             }
         }
+
         let config = Self::default();
         config.save(app);
         config
     }
 
-    pub fn save(&self, app: &AppHandle) {
-        let path = Self::config_path(app);
+    pub fn write_and_sync(path: &Path, content: &[u8]) -> std::io::Result<()> {
         if let Some(parent) = path.parent() {
             let _ = fs::create_dir_all(parent);
         }
+        let tmp_path = path.with_extension("tmp");
+        {
+            let mut file = OpenOptions::new()
+                .write(true)
+                .create(true)
+                .truncate(true)
+                .open(&tmp_path)?;
+            file.write_all(content)?;
+            file.flush()?;
+            file.sync_all()?;
+        }
+
+        if let Err(_e) = fs::rename(&tmp_path, path) {
+            let _ = fs::remove_file(path);
+            if fs::rename(&tmp_path, path).is_err() {
+                let mut file = OpenOptions::new()
+                    .write(true)
+                    .create(true)
+                    .truncate(true)
+                    .open(path)?;
+                file.write_all(content)?;
+                file.flush()?;
+                file.sync_all()?;
+                let _ = fs::remove_file(&tmp_path);
+            }
+        }
+        Ok(())
+    }
+
+    pub fn save(&self, app: &AppHandle) {
+        let primary_path = Self::config_path(app);
+        let legacy_path = Self::legacy_config_path(app);
+
         match serde_json::to_string_pretty(self) {
             Ok(json) => {
-                if let Err(e) = fs::write(&path, json) {
-                    eprintln!("Failed to write config: {e}");
+                let bytes = json.as_bytes();
+                if let Err(e) = Self::write_and_sync(&primary_path, bytes) {
+                    eprintln!("Failed to write primary config to {:?}: {e}", primary_path);
+                }
+                if let Err(e) = Self::write_and_sync(&legacy_path, bytes) {
+                    eprintln!("Failed to write legacy config to {:?}: {e}", legacy_path);
                 }
             }
             Err(e) => {
@@ -165,5 +232,23 @@ mod tests {
         let json = serde_json::to_string(&config).expect("serialize");
         let parsed: AppConfig = serde_json::from_str(&json).expect("deserialize");
         assert_eq!(parsed.last_wallpaper, config.last_wallpaper);
+    }
+
+    #[test]
+    fn test_write_and_sync_creates_and_overwrites() {
+        let tmp_dir = std::env::temp_dir().join("carousel_test_config");
+        let _ = fs::create_dir_all(&tmp_dir);
+        let test_file = tmp_dir.join("test_carousel.json");
+
+        let content1 = b"{\"wallpaper_directory\": \"C:\\\\Wallpapers\"}";
+        AppConfig::write_and_sync(&test_file, content1).expect("write 1");
+        assert_eq!(fs::read(&test_file).unwrap(), content1);
+
+        let content2 = b"{\"wallpaper_directory\": \"C:\\\\NewWallpapers\"}";
+        AppConfig::write_and_sync(&test_file, content2).expect("write 2");
+        assert_eq!(fs::read(&test_file).unwrap(), content2);
+
+        let _ = fs::remove_file(&test_file);
+        let _ = fs::remove_dir(&tmp_dir);
     }
 }
