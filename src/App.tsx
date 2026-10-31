@@ -59,13 +59,17 @@ export default function App() {
   imageCountRef.current = images.length;
 
   const styleRollRef = useRef<StyleRoll | null>(null);
+  const styleRollSeenRef = useRef(false);
 
-  const applyStyleConfig = useCallback((config: AppConfig, reroll = false) => {
+  const applyStyleConfig = useCallback((config: AppConfig, isShow = false) => {
     const mode = parseDisplayMode(config.display_mode);
     if (mode === 'random') {
-      if (reroll || !styleRollRef.current) {
-        styleRollRef.current = rollStyle(styleRollRef.current?.mode);
+      // A roll made while hidden is kept for the first show, so no style is dealt unseen
+      if (!styleRollRef.current || (isShow && styleRollSeenRef.current)) {
+        styleRollRef.current = rollStyle();
+        styleRollSeenRef.current = false;
       }
+      if (isShow) styleRollSeenRef.current = true;
       const roll = styleRollRef.current;
       logFrontend('INFO', `[App] Random style: ${roll.mode}`);
       setDisplayMode(roll.mode);

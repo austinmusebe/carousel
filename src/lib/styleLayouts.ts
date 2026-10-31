@@ -35,17 +35,50 @@ export interface StyleRoll {
   wall: WallLayout;
 }
 
-function pickRandom<T>(items: T[]): T {
-  return items[Math.floor(Math.random() * items.length)];
+function shuffled<T>(items: T[]): T[] {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
 }
 
-/** Never repeats `previous`, so every reopen visibly changes style. */
-export function rollStyle(previous?: RollableMode): StyleRoll {
+/** Deals every item once in random order, reshuffling so no item repeats back to back. */
+class ShuffleBag<T> {
+  private remaining: T[] = [];
+  last: T;
+
+  constructor(private items: T[]) {
+    this.last = items[0];
+  }
+
+  draw(): T {
+    if (this.remaining.length === 0) {
+      this.remaining = shuffled(this.items);
+      const end = this.remaining.length - 1;
+      if (this.remaining[end] === this.last) {
+        [this.remaining[0], this.remaining[end]] = [this.remaining[end], this.remaining[0]];
+      }
+    }
+    this.last = this.remaining.pop() as T;
+    return this.last;
+  }
+}
+
+const modeBag = new ShuffleBag(ROLLABLE_MODES);
+const tileBag = new ShuffleBag(TILES);
+const curveBag = new ShuffleBag(CURVES);
+const wallBag = new ShuffleBag(WALLS);
+
+/** Every style appears once before any repeats; variants only advance when they are seen. */
+export function rollStyle(): StyleRoll {
+  const mode = modeBag.draw();
   return {
-    mode: pickRandom(ROLLABLE_MODES.filter((mode) => mode !== previous)),
-    tile: pickRandom(TILES),
-    curve: pickRandom(CURVES),
-    wall: pickRandom(WALLS),
+    mode,
+    tile: mode === 'geometric' ? tileBag.draw() : tileBag.last,
+    curve: mode === 'geometric' ? curveBag.draw() : curveBag.last,
+    wall: mode === 'wall' ? wallBag.draw() : wallBag.last,
   };
 }
 

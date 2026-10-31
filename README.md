@@ -167,7 +167,7 @@ Select the gallery style in Settings:
 | Card Hand   | Upright cards held in a wide arc.                                     |
 | Collection  | One large card between two tilted piles.                              |
 | Duel        | A slanted row of cards that narrow with distance.                     |
-| Random      | A different style, tile and layout each time the gallery opens.       |
+| Random      | A new style at each open. All styles appear before any repeat.        |
 
 In Geometric and Wall, the arrow keys (or `h`, `j`, `k`, `l`) move in all four directions.
 
