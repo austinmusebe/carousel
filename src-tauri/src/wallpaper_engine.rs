@@ -143,11 +143,9 @@ pub fn find_install(configured: &str) -> Option<PathBuf> {
         .find(|install| executable(install).is_some())
 }
 
+/// Workshop subscriptions only; the install's built-in and local projects are left out.
 fn project_roots(install: &Path) -> Vec<PathBuf> {
-    let mut roots = vec![
-        install.join(r"projects\myprojects"),
-        install.join(r"projects\defaultprojects"),
-    ];
+    let mut roots = Vec::new();
 
     let workshop = |steamapps: &Path| steamapps.join(r"workshop\content").join(WORKSHOP_APP_ID);
     if let Some(steamapps) = install.parent().and_then(Path::parent) {

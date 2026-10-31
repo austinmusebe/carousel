@@ -55,6 +55,8 @@ export default function App() {
   const currentDirRef = useRef<string | null>(null);
   const errorRef = useRef<string | null>(null);
   errorRef.current = error;
+  const imageCountRef = useRef(0);
+  imageCountRef.current = images.length;
 
   const styleRollRef = useRef<StyleRoll | null>(null);
 
@@ -154,7 +156,7 @@ export default function App() {
 
   // Update display mode, backdrop, and reset to last wallpaper on window focus / show
   useEffect(() => {
-    const handleReopen = (reroll: boolean) => {
+    const handleReopen = (isShow: boolean) => {
       setSelectedColor(null);
       getBackdrop()
         .then((img) => {
@@ -167,7 +169,7 @@ export default function App() {
           if (config.last_wallpaper !== undefined) {
             setLastWallpaper(config.last_wallpaper);
           }
-          applyStyleConfig(config, reroll);
+          applyStyleConfig(config, isShow);
           if (typeof config.blur_background === 'boolean') {
             setBlurBackground(config.blur_background);
           }
@@ -201,6 +203,20 @@ export default function App() {
               );
               hasTriggeredScanRef.current = true;
               refresh();
+            } else if (isShow) {
+              // Picks up wallpapers added while hidden, such as new Workshop subscriptions
+              const previousCount = imageCountRef.current;
+              refresh(true).then((result) => {
+                if (result && result.length !== previousCount) {
+                  setTimeout(() => {
+                    window.dispatchEvent(
+                      new CustomEvent('reset-to-last-wallpaper', {
+                        detail: { lastWallpaper: config.last_wallpaper },
+                      })
+                    );
+                  }, 50);
+                }
+              });
             }
           }
         })

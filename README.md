@@ -131,16 +131,17 @@ Open the Settings window from the system tray menu.
 
 ### 6.2 Wallpaper Engine
 
-Carousel can show your [Wallpaper Engine](https://store.steampowered.com/app/431960/) library
-next to your image folder. A wallpaper folder is optional when this is enabled.
+Carousel can show your [Wallpaper Engine](https://store.steampowered.com/app/431960/) Workshop
+subscriptions next to your image folder. A wallpaper folder is optional when this is enabled.
 
 1. Turn on `Wallpaper Engine` in Settings, or click `Use Wallpaper Engine` on the setup screen.
 2. The installation is detected through Steam. To use a different one, select the folder
    that contains `wallpaper64.exe`.
 3. Click `Save changes`.
 
-The gallery lists your Workshop subscriptions, your own projects, and the built-in wallpapers,
-using each project's title and animated preview. When you apply one:
+The gallery lists only your Workshop subscriptions, using each project's title and animated
+preview. It does not list the built-in wallpapers or your own projects. New subscriptions appear
+the next time you open the gallery, after Steam finishes downloading them. When you apply one:
 
 - Carousel sends it to Wallpaper Engine through its
   [command line controls](https://help.wallpaperengine.io/en/functionality/cli.html).

@@ -273,7 +273,7 @@ export default function SettingsScreen() {
           <div className="section-meta">
             <label className="section-label">Wallpaper Engine</label>
             <p className="section-hint">
-              Show your Wallpaper Engine library in the picker alongside your folder.
+              Show your subscribed Workshop wallpapers in the picker alongside your folder.
             </p>
           </div>
           <label className="switch-row">
