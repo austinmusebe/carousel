@@ -1,11 +1,12 @@
-use image::ImageReader;
+use image::codecs::gif::GifDecoder;
+use image::{AnimationDecoder, DynamicImage, ImageReader};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
 use std::fs;
 use std::hash::{Hash, Hasher};
-use std::io::Cursor;
+use std::io::{BufReader, Cursor};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::SystemTime;
@@ -13,6 +14,10 @@ use std::time::SystemTime;
 const THUMB_WIDTH: u32 = 360;
 const THUMB_HEIGHT: u32 = 225;
 const SUPPORTED_EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "webp"];
+/// Average 0-255 brightness below which a GIF frame counts as a blank fade-in
+const MIN_FRAME_LUMA: f64 = 12.0;
+/// Bump when GIF frame selection changes, so cached GIF thumbnails are rebuilt
+const GIF_THUMBNAIL_VERSION: u8 = 2;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ColorScore {
@@ -31,6 +36,10 @@ pub struct WallpaperEntry {
     pub file_size: u64, // bytes
     pub primary_color: Option<String>,
     pub colors: Vec<ColorScore>,
+    /// Absolute path to project.json for Wallpaper Engine entries; `path` is then its preview
+    pub project: Option<String>,
+    /// Wallpaper Engine project type, e.g. "scene", "video", "web"
+    pub project_type: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -49,9 +58,54 @@ struct GeneratedThumbnail {
     colors: Vec<ColorScore>,
 }
 
+pub fn clean_path(path: &Path) -> Option<String> {
+    let abs_path = fs::canonicalize(path).ok()?;
+    let s = abs_path.to_string_lossy();
+    Some(s.strip_prefix(r"\\?\").unwrap_or(&s).to_string())
+}
+
+fn is_gif(path: &Path) -> bool {
+    path.extension()
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("gif"))
+}
+
+fn average_luma(img: &DynamicImage) -> f64 {
+    let luma = img.to_luma8();
+    let total: u64 = luma.as_raw().iter().map(|value| *value as u64).sum();
+    total as f64 / luma.as_raw().len().max(1) as f64
+}
+
+/// The first frame with visible content, or the brightest one if none qualifies.
+/// Many animated previews open on a black fade-in frame.
+fn representative_gif_frame(path: &Path) -> Result<DynamicImage, String> {
+    let file = fs::File::open(path).map_err(|e| format!("Failed to open image: {}", e))?;
+    let decoder = GifDecoder::new(BufReader::new(file))
+        .map_err(|e| format!("Failed to read GIF: {}", e))?;
+
+    let mut brightest: Option<(f64, DynamicImage)> = None;
+    for frame in decoder.into_frames() {
+        let frame = frame.map_err(|e| format!("Failed to decode GIF frame: {}", e))?;
+        let img = DynamicImage::ImageRgba8(frame.into_buffer());
+        let luma = average_luma(&img);
+        if luma >= MIN_FRAME_LUMA {
+            return Ok(img);
+        }
+        if brightest.as_ref().is_none_or(|(best, _)| luma > *best) {
+            brightest = Some((luma, img));
+        }
+    }
+
+    brightest
+        .map(|(_, img)| img)
+        .ok_or_else(|| "GIF has no frames".to_string())
+}
+
 fn cache_key(path: &Path, mtime: SystemTime) -> String {
     let mut hasher = DefaultHasher::new();
     path.to_string_lossy().hash(&mut hasher);
+    if is_gif(path) {
+        GIF_THUMBNAIL_VERSION.hash(&mut hasher);
+    }
     let hash = hasher.finish();
     let secs = mtime
         .duration_since(SystemTime::UNIX_EPOCH)
@@ -204,15 +258,9 @@ pub fn analyze_image_colors(img: &image::DynamicImage) -> (Option<String>, Vec<C
 }
 
 pub fn scan_directory(dir_path: &str, cache_dir: &Path) -> Result<Vec<WallpaperEntry>, String> {
-    let scan_start = std::time::Instant::now();
     let dir = Path::new(dir_path);
     if !dir.is_dir() {
         return Err(format!("Not a directory: {}", dir_path));
-    }
-
-    if !cache_dir.is_dir() {
-        fs::create_dir_all(cache_dir)
-            .map_err(|e| format!("Failed to create cache directory: {}", e))?;
     }
 
     let read_dir = fs::read_dir(dir).map_err(|e| format!("Failed to read directory: {}", e))?;
@@ -239,6 +287,17 @@ pub fn scan_directory(dir_path: &str, cache_dir: &Path) -> Result<Vec<WallpaperE
         })
         .collect();
 
+    scan_files(&files, cache_dir)
+}
+
+pub fn scan_files(files: &[PathBuf], cache_dir: &Path) -> Result<Vec<WallpaperEntry>, String> {
+    let scan_start = std::time::Instant::now();
+
+    if !cache_dir.is_dir() {
+        fs::create_dir_all(cache_dir)
+            .map_err(|e| format!("Failed to create cache directory: {}", e))?;
+    }
+
     let cache_hits = AtomicUsize::new(0);
     let cache_misses = AtomicUsize::new(0);
 
@@ -252,13 +311,7 @@ pub fn scan_directory(dir_path: &str, cache_dir: &Path) -> Result<Vec<WallpaperE
                 .unwrap_or("unknown")
                 .to_string();
 
-            let abs_path = match std::fs::canonicalize(path) {
-                Ok(p) => {
-                    let s = p.to_string_lossy().to_string();
-                    s.strip_prefix(r"\\?\").unwrap_or(&s).to_string()
-                }
-                Err(_) => return None,
-            };
+            let abs_path = clean_path(path)?;
 
             let metadata = match fs::metadata(path) {
                 Ok(m) => m,
@@ -374,6 +427,8 @@ pub fn scan_directory(dir_path: &str, cache_dir: &Path) -> Result<Vec<WallpaperE
                 file_size,
                 primary_color,
                 colors,
+                project: None,
+                project_type: None,
             })
         })
         .collect();
@@ -393,14 +448,16 @@ pub fn scan_directory(dir_path: &str, cache_dir: &Path) -> Result<Vec<WallpaperE
 }
 
 fn generate_thumbnail(path: &Path) -> Result<GeneratedThumbnail, String> {
-    let reader = ImageReader::open(path)
-        .map_err(|e| format!("Failed to open image: {}", e))?
-        .with_guessed_format()
-        .map_err(|e| format!("Failed to guess image format: {}", e))?;
-
-    let img = reader
-        .decode()
-        .map_err(|e| format!("Failed to decode image: {}", e))?;
+    let img = if is_gif(path) {
+        representative_gif_frame(path)?
+    } else {
+        ImageReader::open(path)
+            .map_err(|e| format!("Failed to open image: {}", e))?
+            .with_guessed_format()
+            .map_err(|e| format!("Failed to guess image format: {}", e))?
+            .decode()
+            .map_err(|e| format!("Failed to decode image: {}", e))?
+    };
 
     let width = img.width();
     let height = img.height();
@@ -443,6 +500,66 @@ mod tests {
         assert_ne!(key1, key3);
         assert!(key1.ends_with("_1000.jpg"));
         assert!(key3.ends_with("_2000.jpg"));
+    }
+
+    fn write_gif(path: &Path, frames: &[[u8; 4]]) {
+        use image::codecs::gif::GifEncoder;
+        use image::{Frame, RgbaImage};
+
+        let file = fs::File::create(path).unwrap();
+        let mut encoder = GifEncoder::new(file);
+        for color in frames {
+            let buffer = RgbaImage::from_pixel(16, 16, image::Rgba(*color));
+            encoder.encode_frame(Frame::new(buffer)).unwrap();
+        }
+    }
+
+    fn temp_gif(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!(
+            "carousel_gif_test_{}_{}",
+            name,
+            SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir_all(&dir).unwrap();
+        dir.join("preview.gif")
+    }
+
+    #[test]
+    fn test_gif_thumbnail_skips_black_first_frame() {
+        let path = temp_gif("fade");
+        write_gif(&path, &[[0, 0, 0, 255], [200, 30, 30, 255], [30, 30, 200, 255]]);
+
+        let frame = representative_gif_frame(&path).unwrap();
+        assert!(average_luma(&frame) >= MIN_FRAME_LUMA);
+        assert_eq!(generate_thumbnail(&path).unwrap().primary_color, Some("red".to_string()));
+
+        let _ = fs::remove_dir_all(path.parent().unwrap());
+    }
+
+    #[test]
+    fn test_gif_thumbnail_uses_brightest_frame_when_all_are_dark() {
+        let path = temp_gif("dark");
+        write_gif(&path, &[[0, 0, 0, 255], [8, 8, 8, 255], [3, 3, 3, 255]]);
+
+        let frame = representative_gif_frame(&path).unwrap();
+        assert!(average_luma(&frame) > 5.0);
+
+        let _ = fs::remove_dir_all(path.parent().unwrap());
+    }
+
+    #[test]
+    fn test_gif_cache_key_differs_from_unversioned_key() {
+        let mtime = SystemTime::UNIX_EPOCH + Duration::from_secs(1000);
+        let gif = cache_key(Path::new("C:\\walls\\preview.gif"), mtime);
+
+        let mut hasher = DefaultHasher::new();
+        "C:\\walls\\preview.gif".to_string().hash(&mut hasher);
+        let unversioned = format!("{:016x}_1000.jpg", hasher.finish());
+
+        assert_ne!(gif, unversioned);
     }
 
     #[test]

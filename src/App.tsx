@@ -7,11 +7,30 @@ import AutostartPromptModal from './components/AutostartPromptModal';
 import Coverflow from './components/Coverflow';
 import Shardflow from './components/Shardflow';
 import Cardflow from './components/Cardflow';
+import Styleflow from './components/Styleflow';
 import { useWallpapers } from './hooks/useWallpapers';
 import { useKeyboardActions } from './hooks/useKeyboardActions';
-import { getConfig, setWallpaper, logFrontend, getBackdrop } from './lib/tauri';
+import {
+  getConfig,
+  setWallpaper,
+  logFrontend,
+  getBackdrop,
+  hasWallpaperSource,
+  wallpaperSourceKey,
+} from './lib/tauri';
 import { filterAndSortWallpapers } from './lib/colorFilter';
-import type { WallpaperEntry, DisplayMode, BlurMode, BlurSource } from './types';
+import { isStyleflowMode, parseDisplayMode, rollStyle } from './lib/styleLayouts';
+import type { StyleRoll } from './lib/styleLayouts';
+import type {
+  AppConfig,
+  WallpaperEntry,
+  DisplayMode,
+  BlurMode,
+  BlurSource,
+  GeometricTile,
+  GeometricCurve,
+  WallLayout,
+} from './types';
 import './App.css';
 
 export default function App() {
@@ -22,6 +41,9 @@ export default function App() {
   const [hasDirectory, setHasDirectory] = useState<boolean | null>(null);
   const [showAutostartPrompt, setShowAutostartPrompt] = useState(false);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('shard');
+  const [geometricTile, setGeometricTile] = useState<GeometricTile>('hexagon');
+  const [geometricCurve, setGeometricCurve] = useState<GeometricCurve>('flat');
+  const [wallLayout, setWallLayout] = useState<WallLayout>('uniform');
   const [blurBackground, setBlurBackground] = useState<boolean>(false);
   const [blurMode, setBlurMode] = useState<BlurMode>('fullscreen');
   const [blurSource, setBlurSource] = useState<BlurSource>('wallpaper');
@@ -33,6 +55,36 @@ export default function App() {
   const currentDirRef = useRef<string | null>(null);
   const errorRef = useRef<string | null>(null);
   errorRef.current = error;
+  const imageCountRef = useRef(0);
+  imageCountRef.current = images.length;
+
+  const styleRollRef = useRef<StyleRoll | null>(null);
+  const styleRollSeenRef = useRef(false);
+
+  const applyStyleConfig = useCallback((config: AppConfig, isShow = false) => {
+    const mode = parseDisplayMode(config.display_mode);
+    if (mode === 'random') {
+      // A roll made while hidden is kept for the first show, so no style is dealt unseen
+      if (!styleRollRef.current || (isShow && styleRollSeenRef.current)) {
+        styleRollRef.current = rollStyle();
+        styleRollSeenRef.current = false;
+      }
+      if (isShow) styleRollSeenRef.current = true;
+      const roll = styleRollRef.current;
+      logFrontend('INFO', `[App] Random style: ${roll.mode}`);
+      setDisplayMode(roll.mode);
+      setGeometricTile(roll.tile);
+      setGeometricCurve(roll.curve);
+      setWallLayout(roll.wall);
+      return;
+    }
+
+    styleRollRef.current = null;
+    setDisplayMode(mode);
+    if (config.geometric_tile) setGeometricTile(config.geometric_tile);
+    if (config.geometric_curve) setGeometricCurve(config.geometric_curve);
+    if (config.wall_layout) setWallLayout(config.wall_layout);
+  }, []);
 
   const filteredImages = useMemo(() => {
     return filterAndSortWallpapers(images, selectedColor);
@@ -71,18 +123,10 @@ export default function App() {
           'INFO',
           `[App] Loaded config: dir='${config.wallpaper_directory}', shortcut='${config.shortcut}', display_mode='${config.display_mode}', blur_background=${config.blur_background}, blur_mode='${config.blur_mode}', autostart_prompted=${config.autostart_prompted}`
         );
-        const valid =
-          config.wallpaper_directory !== '' &&
-          config.wallpaper_directory !== null;
+        const valid = hasWallpaperSource(config);
         setHasDirectory(valid);
-        currentDirRef.current = config.wallpaper_directory;
-        if (config.display_mode === 'card') {
-          setDisplayMode('card');
-        } else if (config.display_mode === 'carousel') {
-          setDisplayMode('carousel');
-        } else {
-          setDisplayMode('shard');
-        }
+        currentDirRef.current = wallpaperSourceKey(config);
+        applyStyleConfig(config);
         if (typeof config.blur_background === 'boolean') {
           setBlurBackground(config.blur_background);
         }
@@ -112,11 +156,11 @@ export default function App() {
         logFrontend('ERROR', `[App] Failed to load config: ${e}`);
         setHasDirectory(false);
       });
-  }, [refresh]);
+  }, [refresh, applyStyleConfig]);
 
   // Update display mode, backdrop, and reset to last wallpaper on window focus / show
   useEffect(() => {
-    const handleReopen = () => {
+    const handleReopen = (isShow: boolean) => {
       setSelectedColor(null);
       getBackdrop()
         .then((img) => {
@@ -129,15 +173,7 @@ export default function App() {
           if (config.last_wallpaper !== undefined) {
             setLastWallpaper(config.last_wallpaper);
           }
-          if (config.display_mode) {
-            if (config.display_mode === 'card') {
-              setDisplayMode('card');
-            } else if (config.display_mode === 'carousel') {
-              setDisplayMode('carousel');
-            } else {
-              setDisplayMode('shard');
-            }
-          }
+          applyStyleConfig(config, isShow);
           if (typeof config.blur_background === 'boolean') {
             setBlurBackground(config.blur_background);
           }
@@ -153,14 +189,13 @@ export default function App() {
             })
           );
 
-          const valid =
-            config.wallpaper_directory !== '' &&
-            config.wallpaper_directory !== null;
+          const valid = hasWallpaperSource(config);
+          const sourceKey = wallpaperSourceKey(config);
 
           const dirChanged =
             currentDirRef.current !== null &&
-            config.wallpaper_directory !== currentDirRef.current;
-          currentDirRef.current = config.wallpaper_directory;
+            sourceKey !== currentDirRef.current;
+          currentDirRef.current = sourceKey;
 
           if (valid) {
             setHasDirectory(true);
@@ -172,27 +207,43 @@ export default function App() {
               );
               hasTriggeredScanRef.current = true;
               refresh();
+            } else if (isShow) {
+              // Picks up wallpapers added while hidden, such as new Workshop subscriptions
+              const previousCount = imageCountRef.current;
+              refresh(true).then((result) => {
+                if (result && result.length !== previousCount) {
+                  setTimeout(() => {
+                    window.dispatchEvent(
+                      new CustomEvent('reset-to-last-wallpaper', {
+                        detail: { lastWallpaper: config.last_wallpaper },
+                      })
+                    );
+                  }, 50);
+                }
+              });
             }
           }
         })
         .catch(() => {});
     };
 
-    window.addEventListener('focus', handleReopen);
-    const unlistenPromise = listen('window-shown', handleReopen);
+    // Focus also fires while the gallery stays open, so only a real show re-rolls Random
+    const handleFocus = () => handleReopen(false);
+    window.addEventListener('focus', handleFocus);
+    const unlistenPromise = listen('window-shown', () => handleReopen(true));
 
     return () => {
-      window.removeEventListener('focus', handleReopen);
+      window.removeEventListener('focus', handleFocus);
       unlistenPromise.then((unlisten) => unlisten());
     };
-  }, [refresh]);
+  }, [refresh, applyStyleConfig]);
 
   const handleDirectorySet = useCallback(() => {
     setHasDirectory(true);
     hasTriggeredScanRef.current = true;
     getConfig()
       .then((cfg) => {
-        currentDirRef.current = cfg.wallpaper_directory;
+        currentDirRef.current = wallpaperSourceKey(cfg);
       })
       .catch(() => {});
     refresh();
@@ -200,7 +251,7 @@ export default function App() {
 
   const handleSetWallpaper = useCallback(async (entry: WallpaperEntry) => {
     try {
-      await setWallpaper(entry.path);
+      await setWallpaper(entry);
       setLastWallpaper(entry.path);
       await getCurrentWindow().hide();
     } catch (e) {
@@ -259,7 +310,24 @@ export default function App() {
       {showAutostartPrompt && (
         <AutostartPromptModal onDone={() => setShowAutostartPrompt(false)} />
       )}
-      {displayMode === 'card' ? (
+      {isStyleflowMode(displayMode) ? (
+        <Styleflow
+          mode={displayMode}
+          geometricTile={geometricTile}
+          geometricCurve={geometricCurve}
+          wallLayout={wallLayout}
+          images={filteredImages}
+          onSetWallpaper={handleSetWallpaper}
+          onRefresh={handleRefresh}
+          blurBackground={blurBackground}
+          blurMode={blurMode}
+          blurSource={blurSource}
+          backdropImage={backdropImage}
+          lastWallpaper={lastWallpaper}
+          selectedColor={selectedColor}
+          onSelectColor={setSelectedColor}
+        />
+      ) : displayMode === 'card' ? (
         <Cardflow
           images={filteredImages}
           onSetWallpaper={handleSetWallpaper}
