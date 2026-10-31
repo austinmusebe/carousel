@@ -1,3 +1,8 @@
+export interface ColorScore {
+  color: string;
+  percentage: number;
+}
+
 export interface WallpaperEntry {
   filename: string;
   path: string;
@@ -5,6 +10,8 @@ export interface WallpaperEntry {
   width: number;
   height: number;
   file_size: number; // bytes
+  primary_color?: string | null;
+  colors?: ColorScore[];
 }
 
 export type DisplayMode = 'carousel' | 'shard';

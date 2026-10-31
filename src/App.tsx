@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { listen } from '@tauri-apps/api/event';
 import SetupScreen from './components/SetupScreen';
@@ -9,6 +9,7 @@ import Shardflow from './components/Shardflow';
 import { useWallpapers } from './hooks/useWallpapers';
 import { useKeyboardActions } from './hooks/useKeyboardActions';
 import { getConfig, setWallpaper, logFrontend, getBackdrop } from './lib/tauri';
+import { filterAndSortWallpapers } from './lib/colorFilter';
 import type { WallpaperEntry, DisplayMode, BlurMode, BlurSource } from './types';
 import './App.css';
 
@@ -25,11 +26,16 @@ export default function App() {
   const [blurSource, setBlurSource] = useState<BlurSource>('wallpaper');
   const [backdropImage, setBackdropImage] = useState<string | null>(null);
   const [lastWallpaper, setLastWallpaper] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const { images, loading, error, refresh, hasScanned } = useWallpapers(false);
   const hasTriggeredScanRef = useRef(false);
   const currentDirRef = useRef<string | null>(null);
   const errorRef = useRef<string | null>(null);
   errorRef.current = error;
+
+  const filteredImages = useMemo(() => {
+    return filterAndSortWallpapers(images, selectedColor);
+  }, [images, selectedColor]);
 
   // Listen for backdrop updates from backend
   useEffect(() => {
@@ -108,6 +114,7 @@ export default function App() {
   // Update display mode, backdrop, and reset to last wallpaper on window focus / show
   useEffect(() => {
     const handleReopen = () => {
+      setSelectedColor(null);
       getBackdrop()
         .then((img) => {
           if (img) setBackdropImage(img);
@@ -245,7 +252,7 @@ export default function App() {
       )}
       {displayMode === 'shard' ? (
         <Shardflow
-          images={images}
+          images={filteredImages}
           onSetWallpaper={handleSetWallpaper}
           onRefresh={handleRefresh}
           blurBackground={blurBackground}
@@ -253,10 +260,12 @@ export default function App() {
           blurSource={blurSource}
           backdropImage={backdropImage}
           lastWallpaper={lastWallpaper}
+          selectedColor={selectedColor}
+          onSelectColor={setSelectedColor}
         />
       ) : (
         <Coverflow
-          images={images}
+          images={filteredImages}
           onSetWallpaper={handleSetWallpaper}
           onRefresh={handleRefresh}
           blurBackground={blurBackground}
@@ -264,6 +273,8 @@ export default function App() {
           blurSource={blurSource}
           backdropImage={backdropImage}
           lastWallpaper={lastWallpaper}
+          selectedColor={selectedColor}
+          onSelectColor={setSelectedColor}
         />
       )}
     </>

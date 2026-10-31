@@ -1,7 +1,8 @@
 use image::ImageReader;
 use rayon::prelude::*;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
+use std::collections::HashMap;
 use std::fs;
 use std::hash::{Hash, Hasher};
 use std::io::Cursor;
@@ -13,7 +14,13 @@ const THUMB_WIDTH: u32 = 360;
 const THUMB_HEIGHT: u32 = 225;
 const SUPPORTED_EXTENSIONS: &[&str] = &["png", "jpg", "jpeg", "webp"];
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ColorScore {
+    pub color: String,   // e.g. "red", "orange", "yellow", "green", "teal", "blue", "purple", "pink", "white", "gray", "black", "brown"
+    pub percentage: f32, // 0.0 to 1.0 (fraction of sampled pixels)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WallpaperEntry {
     pub filename: String,
     pub path: String,
@@ -22,6 +29,24 @@ pub struct WallpaperEntry {
     pub width: u32,
     pub height: u32,
     pub file_size: u64, // bytes
+    pub primary_color: Option<String>,
+    pub colors: Vec<ColorScore>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ThumbnailMeta {
+    pub width: u32,
+    pub height: u32,
+    pub primary_color: Option<String>,
+    pub colors: Vec<ColorScore>,
+}
+
+struct GeneratedThumbnail {
+    bytes: Vec<u8>,
+    width: u32,
+    height: u32,
+    primary_color: Option<String>,
+    colors: Vec<ColorScore>,
 }
 
 fn cache_key(path: &Path, mtime: SystemTime) -> String {
@@ -44,6 +69,138 @@ fn get_image_dimensions(path: &Path) -> Result<(u32, u32), String> {
     reader
         .into_dimensions()
         .map_err(|e| format!("Failed to read image dimensions: {}", e))
+}
+
+fn classify_pixel(r: u8, g: u8, b: u8) -> &'static str {
+    let rf = r as f32 / 255.0;
+    let gf = g as f32 / 255.0;
+    let bf = b as f32 / 255.0;
+
+    let cmax = rf.max(gf).max(bf);
+    let cmin = rf.min(gf).min(bf);
+    let delta = cmax - cmin;
+
+    let v = cmax;
+    let s = if cmax > 0.0 { delta / cmax } else { 0.0 };
+
+    // 1. Low brightness (< 0.13): "black"
+    if v < 0.13 {
+        return "black";
+    }
+
+    // 2. High brightness (> 0.85) and low saturation (< 0.18): "white"
+    if v > 0.85 && s < 0.18 {
+        return "white";
+    }
+
+    // 3. Low saturation (< 0.16): "gray"
+    if s < 0.16 {
+        return "gray";
+    }
+
+    // Calculate hue in degrees [0, 360)
+    let h = if delta <= f32::EPSILON {
+        0.0
+    } else if (cmax - rf).abs() <= f32::EPSILON {
+        60.0 * (((gf - bf) / delta).rem_euclid(6.0))
+    } else if (cmax - gf).abs() <= f32::EPSILON {
+        60.0 * (((bf - rf) / delta) + 2.0)
+    } else {
+        60.0 * (((rf - gf) / delta) + 4.0)
+    };
+
+    // 4. Low-medium brightness (< 0.45) with warm hues (15..45) and medium saturation: "brown"
+    if (15.0..45.0).contains(&h) && v < 0.45 {
+        return "brown";
+    }
+
+    // 5. Hues (0..360)
+    if (0.0..15.0).contains(&h) || (345.0..=360.0).contains(&h) {
+        "red"
+    } else if (15.0..45.0).contains(&h) {
+        "orange"
+    } else if (45.0..70.0).contains(&h) {
+        "yellow"
+    } else if (70.0..165.0).contains(&h) {
+        "green"
+    } else if (165.0..200.0).contains(&h) {
+        "teal"
+    } else if (200.0..260.0).contains(&h) {
+        "blue"
+    } else if (260.0..305.0).contains(&h) {
+        "purple"
+    } else if (305.0..345.0).contains(&h) {
+        "pink"
+    } else {
+        "red"
+    }
+}
+
+fn is_neutral_color(c: &str) -> bool {
+    matches!(c, "black" | "white" | "gray")
+}
+
+pub fn analyze_image_colors(img: &image::DynamicImage) -> (Option<String>, Vec<ColorScore>) {
+    let rgb = img.to_rgb8();
+    let width = rgb.width();
+    let height = rgb.height();
+    if width == 0 || height == 0 {
+        return (None, Vec::new());
+    }
+
+    let mut counts: HashMap<&'static str, usize> = HashMap::new();
+    let mut total_samples = 0usize;
+
+    // Sample across thumbnail stepping by 2 pixels for sub-millisecond execution
+    for y in (0..height).step_by(2) {
+        for x in (0..width).step_by(2) {
+            let p = rgb.get_pixel(x, y);
+            let color = classify_pixel(p[0], p[1], p[2]);
+            *counts.entry(color).or_insert(0) += 1;
+            total_samples += 1;
+        }
+    }
+
+    if total_samples == 0 {
+        return (None, Vec::new());
+    }
+
+    let mut raw_scores: Vec<ColorScore> = counts
+        .into_iter()
+        .map(|(color, count)| ColorScore {
+            color: color.to_string(),
+            percentage: ((count as f32 / total_samples as f32) * 1000.0).round() / 1000.0,
+        })
+        .collect();
+
+    // Sort by percentage descending
+    raw_scores.sort_by(|a, b| {
+        b.percentage
+            .partial_cmp(&a.percentage)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+
+    // Filter out buckets below 8% (0.08) so only genuine colors are returned
+    let mut colors: Vec<ColorScore> = raw_scores
+        .iter()
+        .filter(|c| c.percentage >= 0.08)
+        .cloned()
+        .collect();
+
+    if colors.is_empty() {
+        if let Some(top) = raw_scores.first() {
+            colors.push(top.clone());
+        }
+    }
+
+    // primary_color is the top non-neutral color (or top color if mostly black/white/gray)
+    let primary_color = colors
+        .iter()
+        .find(|c| !is_neutral_color(&c.color))
+        .or_else(|| colors.first())
+        .map(|c| c.color.clone());
+
+    (primary_color, colors)
 }
 
 pub fn scan_directory(dir_path: &str, cache_dir: &Path) -> Result<Vec<WallpaperEntry>, String> {
@@ -113,36 +270,73 @@ pub fn scan_directory(dir_path: &str, cache_dir: &Path) -> Result<Vec<WallpaperE
 
             let cache_filename = cache_key(Path::new(&abs_path), mtime);
             let cache_path = cache_dir.join(cache_filename);
+            let meta_path = cache_path.with_extension("meta");
 
             let is_cached = cache_path.is_file()
                 && fs::metadata(&cache_path).map(|m| m.len() > 0).unwrap_or(false);
 
-            let (width, height) = if is_cached {
-                match get_image_dimensions(path) {
-                    Ok(dims) => {
-                        cache_hits.fetch_add(1, Ordering::Relaxed);
-                        dims
-                    }
-                    Err(_) => {
-                        // Fallback to regenerating thumbnail if reading dimensions failed
-                        cache_misses.fetch_add(1, Ordering::Relaxed);
-                        let (bytes, width, height) = match generate_thumbnail(path) {
-                            Ok(t) => t,
-                            Err(e) => {
-                                eprintln!("Failed to generate thumbnail for {}: {}", filename, e);
+            let (width, height, primary_color, colors) = if is_cached {
+                // Check if .meta exists and can be parsed directly
+                let cached_meta = if meta_path.is_file() {
+                    fs::read_to_string(&meta_path)
+                        .ok()
+                        .and_then(|s| serde_json::from_str::<ThumbnailMeta>(&s).ok())
+                } else {
+                    None
+                };
+
+                if let Some(meta) = cached_meta {
+                    cache_hits.fetch_add(1, Ordering::Relaxed);
+                    (meta.width, meta.height, meta.primary_color, meta.colors)
+                } else {
+                    // .meta doesn't exist: open cached thumbnail .jpg, analyze colors, write .meta
+                    match image::open(&cache_path) {
+                        Ok(cached_thumb) => {
+                            cache_hits.fetch_add(1, Ordering::Relaxed);
+                            let (prim, cols) = analyze_image_colors(&cached_thumb);
+                            let (w, h) = get_image_dimensions(path)
+                                .unwrap_or((cached_thumb.width(), cached_thumb.height()));
+                            let meta = ThumbnailMeta {
+                                width: w,
+                                height: h,
+                                primary_color: prim.clone(),
+                                colors: cols.clone(),
+                            };
+                            if let Ok(json) = serde_json::to_string(&meta) {
+                                let _ = fs::write(&meta_path, json);
+                            }
+                            (w, h, prim, cols)
+                        }
+                        Err(_) => {
+                            // Thumbnail could not be opened, regenerate
+                            cache_misses.fetch_add(1, Ordering::Relaxed);
+                            let gen = match generate_thumbnail(path) {
+                                Ok(t) => t,
+                                Err(e) => {
+                                    eprintln!("Failed to generate thumbnail for {}: {}", filename, e);
+                                    return None;
+                                }
+                            };
+                            if let Err(e) = fs::write(&cache_path, &gen.bytes) {
+                                eprintln!("Failed to write thumbnail cache for {}: {}", filename, e);
                                 return None;
                             }
-                        };
-                        if let Err(e) = fs::write(&cache_path, &bytes) {
-                            eprintln!("Failed to write thumbnail cache for {}: {}", filename, e);
-                            return None;
+                            let meta = ThumbnailMeta {
+                                width: gen.width,
+                                height: gen.height,
+                                primary_color: gen.primary_color.clone(),
+                                colors: gen.colors.clone(),
+                            };
+                            if let Ok(json) = serde_json::to_string(&meta) {
+                                let _ = fs::write(&meta_path, json);
+                            }
+                            (gen.width, gen.height, gen.primary_color, gen.colors)
                         }
-                        (width, height)
                     }
                 }
             } else {
                 cache_misses.fetch_add(1, Ordering::Relaxed);
-                let (bytes, width, height) = match generate_thumbnail(path) {
+                let gen = match generate_thumbnail(path) {
                     Ok(t) => t,
                     Err(e) => {
                         eprintln!("Failed to generate thumbnail for {}: {}", filename, e);
@@ -150,12 +344,22 @@ pub fn scan_directory(dir_path: &str, cache_dir: &Path) -> Result<Vec<WallpaperE
                     }
                 };
 
-                if let Err(e) = fs::write(&cache_path, &bytes) {
+                if let Err(e) = fs::write(&cache_path, &gen.bytes) {
                     eprintln!("Failed to write thumbnail cache for {}: {}", filename, e);
                     return None;
                 }
 
-                (width, height)
+                let meta = ThumbnailMeta {
+                    width: gen.width,
+                    height: gen.height,
+                    primary_color: gen.primary_color.clone(),
+                    colors: gen.colors.clone(),
+                };
+                if let Ok(json) = serde_json::to_string(&meta) {
+                    let _ = fs::write(&meta_path, json);
+                }
+
+                (gen.width, gen.height, gen.primary_color, gen.colors)
             };
 
             let thumb_str = cache_path.to_string_lossy().to_string();
@@ -168,6 +372,8 @@ pub fn scan_directory(dir_path: &str, cache_dir: &Path) -> Result<Vec<WallpaperE
                 width,
                 height,
                 file_size,
+                primary_color,
+                colors,
             })
         })
         .collect();
@@ -186,7 +392,7 @@ pub fn scan_directory(dir_path: &str, cache_dir: &Path) -> Result<Vec<WallpaperE
     Ok(wallpapers)
 }
 
-fn generate_thumbnail(path: &Path) -> Result<(Vec<u8>, u32, u32), String> {
+fn generate_thumbnail(path: &Path) -> Result<GeneratedThumbnail, String> {
     let reader = ImageReader::open(path)
         .map_err(|e| format!("Failed to open image: {}", e))?
         .with_guessed_format()
@@ -200,6 +406,7 @@ fn generate_thumbnail(path: &Path) -> Result<(Vec<u8>, u32, u32), String> {
     let height = img.height();
 
     let thumb = img.thumbnail(THUMB_WIDTH, THUMB_HEIGHT);
+    let (primary_color, colors) = analyze_image_colors(&thumb);
 
     let mut buf = Cursor::new(Vec::new());
     // Use JPEG with quality 80 for fast encoding and compact disk size
@@ -208,7 +415,13 @@ fn generate_thumbnail(path: &Path) -> Result<(Vec<u8>, u32, u32), String> {
         .encode_image(&thumb)
         .map_err(|e| format!("Failed to encode thumbnail: {}", e))?;
 
-    Ok((buf.into_inner(), width, height))
+    Ok(GeneratedThumbnail {
+        bytes: buf.into_inner(),
+        width,
+        height,
+        primary_color,
+        colors,
+    })
 }
 
 #[cfg(test)]
@@ -233,7 +446,7 @@ mod tests {
     }
 
     #[test]
-    fn test_scan_directory_cache_hit_and_miss() {
+    fn test_scan_directory_cache_hit_and_miss_with_meta() {
         let temp_dir = std::env::temp_dir().join(format!(
             "carousel_test_{}",
             std::time::SystemTime::now()
@@ -246,35 +459,116 @@ mod tests {
         fs::create_dir_all(&wall_dir).unwrap();
         fs::create_dir_all(&cache_dir).unwrap();
 
-        // Create a test PNG image (100x80 red rectangle)
+        // Create a test PNG image (100x80 pure red rectangle)
         let img = image::RgbImage::from_fn(100, 80, |_x, _y| image::Rgb([255, 0, 0]));
         let img_path = wall_dir.join("test_wallpaper.png");
         img.save(&img_path).unwrap();
 
-        // Scan 1: Cache miss
+        // Scan 1: Cache miss (generates .jpg and .meta)
         let res1 = scan_directory(wall_dir.to_str().unwrap(), &cache_dir).expect("scan 1 failed");
         assert_eq!(res1.len(), 1);
         assert_eq!(res1[0].filename, "test_wallpaper.png");
         assert_eq!(res1[0].width, 100);
         assert_eq!(res1[0].height, 80);
+        assert_eq!(res1[0].primary_color, Some("red".to_string()));
+        assert!(!res1[0].colors.is_empty());
+        assert_eq!(res1[0].colors[0].color, "red");
+        assert!((res1[0].colors[0].percentage - 1.0).abs() < 0.05);
+
         let thumb_path = PathBuf::from(&res1[0].thumbnail);
         assert!(thumb_path.exists());
         assert!(thumb_path.is_file());
         assert!(fs::metadata(&thumb_path).unwrap().len() > 0);
+
+        let meta_path = thumb_path.with_extension("meta");
+        assert!(meta_path.exists());
+        assert!(meta_path.is_file());
 
         // Verify the cached image can be decoded and dimensions fit within 360x225
         let cached_img = image::open(&thumb_path).expect("failed to open cached thumbnail");
         assert!(cached_img.width() <= THUMB_WIDTH);
         assert!(cached_img.height() <= THUMB_HEIGHT);
 
-        // Scan 2: Cache hit
+        // Scan 2: Cache hit via .meta (zero image decoding)
         let res2 = scan_directory(wall_dir.to_str().unwrap(), &cache_dir).expect("scan 2 failed");
         assert_eq!(res2.len(), 1);
         assert_eq!(res2[0].thumbnail, res1[0].thumbnail);
         assert_eq!(res2[0].width, 100);
         assert_eq!(res2[0].height, 80);
+        assert_eq!(res2[0].primary_color, Some("red".to_string()));
+        assert_eq!(res2[0].colors[0].color, "red");
+
+        // Scan 3: Cache hit without .meta (simulating upgrade: .meta deleted, .jpg exists)
+        fs::remove_file(&meta_path).unwrap();
+        assert!(!meta_path.exists());
+
+        let res3 = scan_directory(wall_dir.to_str().unwrap(), &cache_dir).expect("scan 3 failed");
+        assert_eq!(res3.len(), 1);
+        assert_eq!(res3[0].thumbnail, res1[0].thumbnail);
+        assert_eq!(res3[0].width, 100);
+        assert_eq!(res3[0].height, 80);
+        assert_eq!(res3[0].primary_color, Some("red".to_string()));
+        assert_eq!(res3[0].colors[0].color, "red");
+        // Verify .meta was written again
+        assert!(meta_path.exists());
 
         // Clean up
         let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_color_classification_categories() {
+        // Test all 12 categories
+        assert_eq!(classify_pixel(0, 0, 0), "black");
+        assert_eq!(classify_pixel(20, 20, 20), "black");
+        assert_eq!(classify_pixel(255, 255, 255), "white");
+        assert_eq!(classify_pixel(240, 240, 240), "white");
+        assert_eq!(classify_pixel(128, 128, 128), "gray");
+        assert_eq!(classify_pixel(60, 60, 60), "gray");
+
+        // Warm brown: low-medium brightness (< 0.45) with warm hues (15..45)
+        assert_eq!(classify_pixel(100, 50, 20), "brown");
+
+        // Hues
+        assert_eq!(classify_pixel(255, 0, 0), "red");
+        assert_eq!(classify_pixel(255, 140, 0), "orange");
+        assert_eq!(classify_pixel(255, 255, 0), "yellow");
+        assert_eq!(classify_pixel(0, 255, 0), "green");
+        assert_eq!(classify_pixel(0, 200, 200), "teal");
+        assert_eq!(classify_pixel(0, 100, 255), "blue");
+        assert_eq!(classify_pixel(150, 0, 200), "purple");
+        assert_eq!(classify_pixel(255, 105, 180), "pink");
+    }
+
+    #[test]
+    fn test_analyze_image_colors_priority() {
+        // Image with 80% black and 20% blue
+        // Expected: primary_color is "blue" (top non-neutral color)
+        let img = image::DynamicImage::ImageRgb8(image::RgbImage::from_fn(100, 100, |x, _y| {
+            if x < 80 {
+                image::Rgb([10, 10, 10]) // black
+            } else {
+                image::Rgb([0, 100, 255]) // blue
+            }
+        }));
+
+        let (primary, colors) = analyze_image_colors(&img);
+        assert_eq!(primary, Some("blue".to_string()));
+        assert!(colors.iter().any(|c| c.color == "black"));
+        assert!(colors.iter().any(|c| c.color == "blue"));
+
+        // Image with 70% black and 30% gray (monochrome)
+        // Expected: primary_color is "black" (top neutral color since no non-neutral color exists)
+        let mono_img = image::DynamicImage::ImageRgb8(image::RgbImage::from_fn(100, 100, |x, _y| {
+            if x < 70 {
+                image::Rgb([10, 10, 10]) // black
+            } else {
+                image::Rgb([128, 128, 128]) // gray
+            }
+        }));
+
+        let (mono_primary, mono_colors) = analyze_image_colors(&mono_img);
+        assert_eq!(mono_primary, Some("black".to_string()));
+        assert_eq!(mono_colors[0].color, "black");
     }
 }

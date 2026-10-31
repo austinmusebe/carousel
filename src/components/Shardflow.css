@@ -31,7 +31,7 @@
 }
 
 .shard-viewport.blur-fullscreen {
-  background: rgba(12, 12, 16, 0.35);
+  background: rgba(10, 10, 14, 0.22);
   mask-image: none;
   -webkit-mask-image: none;
 }
@@ -63,7 +63,7 @@
 }
 
 .desktop-backdrop.wallpaper-backdrop {
-  filter: blur(5px) brightness(0.65) saturate(1.25);
+  filter: blur(50px) brightness(0.75) saturate(1.2);
   transform: scale(1.15);
 }
 
@@ -263,9 +263,39 @@
   background: rgba(255, 255, 255, 0.18);
 }
 
+.shard-show-all-btn {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  padding: 8px 22px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.shard-show-all-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.shard-empty.color-empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: auto;
+  height: auto;
+  z-index: 10;
+}
+
 .shard-toast {
   position: absolute;
-  top: 24px;
+  top: max(16px, calc(50vh - 210px - 88px));
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;

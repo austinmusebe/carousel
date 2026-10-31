@@ -3,6 +3,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { openSettingsWindow, logImageSwitch, logFrontend, isSamePath } from '../lib/tauri';
 import type { WallpaperEntry, BlurMode, BlurSource } from '../types';
+import ColorFilterBar from './ColorFilterBar';
 import './Coverflow.css';
 
 interface CoverflowProps {
@@ -14,6 +15,8 @@ interface CoverflowProps {
   blurSource?: BlurSource;
   backdropImage?: string | null;
   lastWallpaper?: string | null;
+  selectedColor?: string | null;
+  onSelectColor?: (color: string | null) => void;
 }
 
 const VISIBLE_RADIUS = 6;
@@ -30,6 +33,8 @@ export default function Coverflow({
   blurSource = 'wallpaper',
   backdropImage = null,
   lastWallpaper = null,
+  selectedColor = null,
+  onSelectColor,
 }: CoverflowProps) {
   const findWallpaperIndex = useCallback(
     (targetPath?: string | null) => {
@@ -82,6 +87,15 @@ export default function Coverflow({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // When color filter changes, reset to virtualIndex 0 cleanly
+  const prevColorRef = useRef(selectedColor);
+  useEffect(() => {
+    if (prevColorRef.current !== selectedColor) {
+      prevColorRef.current = selectedColor;
+      setVirtualIndex(0);
+    }
+  }, [selectedColor]);
 
   // Compute active card width: ~58% of viewport, clamped between 520px and 780px
   const centerWidth = useMemo(() => {
@@ -178,7 +192,7 @@ export default function Coverflow({
       const result = await onRefresh();
       if (Array.isArray(result)) {
         if (activePath) {
-          const newIdx = result.findIndex((item) => item.path === activePath);
+          const newIdx = images.findIndex((item) => isSamePath(item.path, activePath));
           if (newIdx !== -1) {
             setVirtualIndex(newIdx);
           }
@@ -267,7 +281,59 @@ export default function Coverflow({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const blurClass = blurBackground
+    ? blurMode === 'window'
+      ? 'blur-window'
+      : 'blur-fullscreen'
+    : '';
+
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget && blurBackground && blurMode === 'fullscreen') {
+      getCurrentWindow().hide();
+    }
+  };
+
   if (count === 0) {
+    if (selectedColor && onSelectColor) {
+      return (
+        <div
+          className={`gallery-viewport ${blurClass}`}
+          onClick={handleBackdropClick}
+        >
+          {blurBackground && (
+            blurSource === 'screen' && backdropImage ? (
+              <img
+                src={`data:image/jpeg;base64,${backdropImage}`}
+                alt=""
+                className="desktop-backdrop"
+                draggable={false}
+              />
+            ) : null
+          )}
+          <ColorFilterBar
+            selectedColor={selectedColor}
+            onSelectColor={onSelectColor}
+          />
+          {refreshNotification && (
+            <div className="gallery-toast">
+              <span className="gallery-toast-dot" />
+              <span>{refreshNotification}</span>
+            </div>
+          )}
+          <div className="gallery-empty color-empty">
+            <p>No wallpapers match this color</p>
+            <button
+              type="button"
+              className="gallery-show-all-btn"
+              onClick={() => onSelectColor(null)}
+            >
+              Show All
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="gallery-empty">
         <p>No wallpapers found in the selected directory.</p>
@@ -312,18 +378,6 @@ export default function Coverflow({
     });
   }
 
-    const blurClass = blurBackground
-    ? blurMode === 'window'
-      ? 'blur-window'
-      : 'blur-fullscreen'
-    : '';
-
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && blurBackground && blurMode === 'fullscreen') {
-      getCurrentWindow().hide();
-    }
-  };
-
   return (
     <div
       className={`gallery-viewport ${blurClass}`}
@@ -360,6 +414,12 @@ export default function Coverflow({
             />
           )
         )
+      )}
+      {onSelectColor && (
+        <ColorFilterBar
+          selectedColor={selectedColor}
+          onSelectColor={onSelectColor}
+        />
       )}
       {refreshNotification && (
         <div className="gallery-toast">
