@@ -13,12 +13,14 @@ ready for the shortcut.
 ## Non-negotiables
 
 1. **No PowerShell subprocesses, no registry writes** for setting the wallpaper. It's
-   `SystemParametersInfoW` via `windows-sys`, full stop.
+   `SystemParametersInfoW` via `windows-sys`, full stop. Wallpaper Engine entries are the
+   one exception: they go through its own `-control` CLI, run directly with no shell.
 2. **The window hides, it never closes**, on Esc or focus loss. The process stays
    resident so the global shortcut keeps working.
 3. **Don't pipe full-resolution images through Tauri IPC.** Thumbnails: small encoded
    bytes returned from the scan command. Full centered image: asset protocol +
    `convertFileSrc`, scoped to the configured wallpaper directory only — not `**/*`.
+   Wallpaper Engine previews are allowed file by file, never by directory.
 4. **The global shortcut is user-configurable**, not hardcoded to Alt+W in source. Read
    it from a config file with Alt+W as the shipped default.
 5. **Absolute paths only** for anything crossing into the wallpaper-setting command.

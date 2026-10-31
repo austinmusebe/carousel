@@ -20,6 +20,8 @@ const SHORTCUT_PRESETS = [
 
 export default function SettingsScreen() {
   const [directory, setDirectory] = useState('');
+  const [wallpaperEngineEnabled, setWallpaperEngineEnabled] = useState(false);
+  const [wallpaperEngineDirectory, setWallpaperEngineDirectory] = useState('');
   const [shortcut, setShortcut] = useState('Alt+W');
   const [autostart, setAutostart] = useState(false);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('shard');
@@ -35,6 +37,8 @@ export default function SettingsScreen() {
     getConfig()
       .then(async (cfg) => {
         setDirectory(cfg.wallpaper_directory || '');
+        setWallpaperEngineEnabled(cfg.wallpaper_engine_enabled ?? false);
+        setWallpaperEngineDirectory(cfg.wallpaper_engine_directory || '');
         setShortcut(cfg.shortcut || 'Alt+W');
         setDisplayMode(cfg.display_mode || 'shard');
         setBlurBackground(cfg.blur_background ?? false);
@@ -71,6 +75,23 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleBrowseWallpaperEngine = async () => {
+    try {
+      const selected = await open({
+        directory: true,
+        multiple: false,
+        title: 'Select Wallpaper Engine Folder',
+        defaultPath: wallpaperEngineDirectory || undefined,
+      });
+      if (selected && typeof selected === 'string') {
+        setWallpaperEngineDirectory(selected);
+      }
+    } catch (err) {
+      setStatusMessage(`Failed to browse folder: ${err}`);
+      setIsError(true);
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     setStatusMessage(null);
@@ -83,7 +104,9 @@ export default function SettingsScreen() {
         displayMode,
         blurBackground,
         blurMode,
-        blurSource
+        blurSource,
+        wallpaperEngineEnabled,
+        wallpaperEngineDirectory
       );
       setStatusMessage('Settings saved successfully');
       setIsError(false);
@@ -158,6 +181,46 @@ export default function SettingsScreen() {
               Browse
             </button>
           </div>
+        </section>
+
+        {/* Section: Wallpaper Engine */}
+        <section className="settings-section">
+          <div className="section-meta">
+            <label className="section-label">Wallpaper Engine</label>
+            <p className="section-hint">
+              Show your Wallpaper Engine library in the picker alongside your folder.
+            </p>
+          </div>
+          <label className="switch-row">
+            <div className="switch-wrapper">
+              <input
+                type="checkbox"
+                className="switch-input"
+                id="wallpaper-engine-toggle"
+                checked={wallpaperEngineEnabled}
+                onChange={(e) => setWallpaperEngineEnabled(e.target.checked)}
+              />
+              <span className="switch-track" />
+            </div>
+            <span className="switch-label-text">
+              {wallpaperEngineEnabled ? 'Wallpaper Engine (enabled)' : 'Wallpaper Engine (disabled)'}
+            </span>
+          </label>
+          {wallpaperEngineEnabled && (
+            <div className="input-group">
+              <input
+                type="text"
+                className="text-input"
+                value={wallpaperEngineDirectory}
+                onChange={(e) => setWallpaperEngineDirectory(e.target.value)}
+                placeholder="Detected automatically through Steam"
+                spellCheck={false}
+              />
+              <button className="btn btn-outline" onClick={handleBrowseWallpaperEngine}>
+                Browse
+              </button>
+            </div>
+          )}
         </section>
 
         {/* Section: Shortcut */}

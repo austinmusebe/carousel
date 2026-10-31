@@ -1,7 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { convertFileSrc } from '@tauri-apps/api/core';
-import { openSettingsWindow, logImageSwitch, logFrontend, isSamePath } from '../lib/tauri';
+import {
+  openSettingsWindow,
+  logImageSwitch,
+  logFrontend,
+  isSamePath,
+  pillResolution,
+  pillTag,
+} from '../lib/tauri';
 import type { WallpaperEntry, BlurMode, BlurSource } from '../types';
 import ColorFilterBar from './ColorFilterBar';
 import './Cardflow.css';
@@ -422,7 +429,7 @@ export default function Cardflow({
       )}
       <div className="card-stage" onClick={handleBackdropClick}>
         {slots.map((slot) => {
-          const fileExt = slot.img.filename.split('.').pop()?.toUpperCase() || 'IMG';
+          const fileExt = pillTag(slot.img);
           const isHighResReady = loadedHighResMap[slot.img.path];
 
           // Compute offset class name
@@ -473,13 +480,13 @@ export default function Cardflow({
                 <div className="card-pill">
                   <div className="card-pill-top">
                     <span className="card-pill-resolution">
-                      {slot.img.width > 0 && slot.img.height > 0
-                        ? `${slot.img.width} × ${slot.img.height}`
-                        : 'Image'}
+                      {pillResolution(slot.img)}
                     </span>
-                    <span className="card-pill-filesize">
-                      {formatFileSize(slot.img.file_size)}
-                    </span>
+                    {!slot.img.project && (
+                      <span className="card-pill-filesize">
+                        {formatFileSize(slot.img.file_size)}
+                      </span>
+                    )}
                   </div>
                   <div className="card-pill-bottom">
                     <span className="card-pill-name" title={slot.img.filename}>

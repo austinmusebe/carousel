@@ -129,18 +129,39 @@ Open the Settings window from the system tray menu.
 2. Select the folder that contains your wallpaper files.
 3. Supported file formats: `.png`, `.jpg`, `.jpeg`, `.webp`.
 
-### 6.2 Global Shortcut
+### 6.2 Wallpaper Engine
+
+Carousel can show your [Wallpaper Engine](https://store.steampowered.com/app/431960/) library
+next to your image folder. A wallpaper folder is optional when this is enabled.
+
+1. Turn on `Wallpaper Engine` in Settings, or click `Use Wallpaper Engine` on the setup screen.
+2. The installation is detected through Steam. To use a different one, select the folder
+   that contains `wallpaper64.exe`.
+3. Click `Save changes`.
+
+The gallery lists your Workshop subscriptions, your own projects, and the built-in wallpapers,
+using each project's title and animated preview. When you apply one:
+
+- Carousel sends it to Wallpaper Engine through its
+  [command line controls](https://help.wallpaperengine.io/en/functionality/cli.html).
+- If Wallpaper Engine is not running, Carousel starts it first.
+- The wallpaper opens on the first monitor only.
+
+Applying a regular image while Wallpaper Engine is running closes the active Wallpaper Engine
+wallpaper, so that the image is visible on the desktop.
+
+### 6.3 Global Shortcut
 
 1. Click an available preset (`Alt+W`, `Ctrl+Alt+W`, `Alt+Space`, `Ctrl+Shift+W`).
 2. Alternatively, enter a custom key combination in the input field.
 3. Click `Save changes` to apply the new shortcut.
 
-### 6.3 Reload Directory Shortcut
+### 6.4 Reload Directory Shortcut
 
 Press `R` while the wallpaper gallery is open to check for newly added or removed images.
 This shortcut is built into the application and cannot be changed.
 
-### 6.4 Configuration Storage
+### 6.5 Configuration Storage
 
 The application saves settings in a JSON file at this location:
 
@@ -154,6 +175,7 @@ The application saves settings in a JSON file at this location:
 - **Backend**: Rust and Tauri v2.
 - **Windows Integration**:
   - Sets desktop wallpapers through `SystemParametersInfoW` in the Win32 API.
+  - Applies Wallpaper Engine wallpapers by running its `wallpaper64.exe -control` commands.
   - Does not use PowerShell processes.
   - Does not modify the Windows Registry directly.
   - Removes window title bars with `SetWindowLongPtrW`.

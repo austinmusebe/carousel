@@ -3,6 +3,7 @@ mod config;
 mod logger;
 mod scanner;
 mod wallpaper;
+mod wallpaper_engine;
 
 use config::AppConfig;
 use logger::{app_error, app_info, app_warn};
@@ -220,13 +221,47 @@ fn log_frontend(level: String, message: String) {
     logger::log(&level, &format!("[Frontend] {}", message));
 }
 
+fn collect_wallpapers(
+    app: &tauri::AppHandle,
+    config: &AppConfig,
+    cache_dir: &std::path::Path,
+) -> Result<Vec<scanner::WallpaperEntry>, String> {
+    let mut entries = if config.has_valid_directory() {
+        scanner::scan_directory(&config.wallpaper_directory, cache_dir)?
+    } else {
+        Vec::new()
+    };
+
+    if config.wallpaper_engine_enabled {
+        match wallpaper_engine::find_install(&config.wallpaper_engine_directory) {
+            Some(install) => {
+                let projects = wallpaper_engine::scan(&install, cache_dir)?;
+                // Previews sit in per-project folders, so allow only those exact files
+                let scope = app.asset_protocol_scope();
+                for project in &projects {
+                    let _ = scope.allow_file(&project.path);
+                }
+                entries.extend(projects);
+                entries.sort_by_key(|a| a.filename.to_lowercase());
+            }
+            None if entries.is_empty() => {
+                return Err("Wallpaper Engine installation not found".to_string());
+            }
+            None => app_warn!("[WallpaperEngine] Enabled but installation not found"),
+        }
+    }
+
+    Ok(entries)
+}
+
 #[tauri::command]
 fn scan_wallpapers(
+    app: tauri::AppHandle,
     state: tauri::State<'_, AppState>,
 ) -> Result<Vec<scanner::WallpaperEntry>, String> {
     app_info!("[Command] scan_wallpapers called");
     let config = state.config.lock().map_err(|e| e.to_string())?;
-    if !config.has_valid_directory() {
+    if !config.has_valid_source() {
         app_warn!(
             "[Command] scan_wallpapers: invalid directory '{}'",
             config.wallpaper_directory
@@ -237,7 +272,7 @@ fn scan_wallpapers(
         "[Command] scan_wallpapers scanning: '{}'",
         config.wallpaper_directory
     );
-    let res = scanner::scan_directory(&config.wallpaper_directory, &state.cache_dir);
+    let res = collect_wallpapers(&app, &config, &state.cache_dir);
     match &res {
         Ok(entries) => app_info!(
             "[Command] scan_wallpapers succeeded with {} images",
@@ -253,9 +288,32 @@ fn set_wallpaper(
     app: tauri::AppHandle,
     state: tauri::State<'_, AppState>,
     path: String,
+    project: Option<String>,
 ) -> Result<(), String> {
-    let clean_path = wallpaper::set_wallpaper(&path)?;
     let mut config = state.config.lock().map_err(|e| e.to_string())?;
+    let install = if config.wallpaper_engine_enabled {
+        wallpaper_engine::find_install(&config.wallpaper_engine_directory)
+    } else {
+        None
+    };
+
+    let clean_path = match project {
+        Some(project) => {
+            let install = install.ok_or("Wallpaper Engine installation not found")?;
+            wallpaper_engine::apply(&install, &project)?;
+            // Galleries match last_wallpaper against entry.path, which is the preview here
+            scanner::clean_path(std::path::Path::new(&path))
+                .ok_or_else(|| format!("Failed to resolve path '{}'", path))?
+        }
+        None => {
+            let clean_path = wallpaper::set_wallpaper(&path)?;
+            if let Some(install) = &install {
+                wallpaper_engine::close_wallpapers(install);
+            }
+            clean_path
+        }
+    };
+
     config.last_wallpaper = Some(clean_path.clone());
     config.save(&app);
     app_info!("[Wallpaper] Wallpaper set and saved to config: '{}'", clean_path);
@@ -286,6 +344,20 @@ fn set_wallpaper_directory(
     }
     let _ = scope.allow_directory(&state.cache_dir, false);
 
+    Ok(())
+}
+
+#[tauri::command]
+fn enable_wallpaper_engine(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, AppState>,
+) -> Result<(), String> {
+    let mut config = state.config.lock().map_err(|e| e.to_string())?;
+    if wallpaper_engine::find_install(&config.wallpaper_engine_directory).is_none() {
+        return Err("Wallpaper Engine installation not found".to_string());
+    }
+    config.wallpaper_engine_enabled = true;
+    config.save(&app);
     Ok(())
 }
 
@@ -339,8 +411,17 @@ fn save_settings(
     blur_background: bool,
     blur_mode: String,
     blur_source: Option<String>,
+    wallpaper_engine_enabled: bool,
+    wallpaper_engine_directory: String,
 ) -> Result<(), String> {
     use tauri_plugin_autostart::ManagerExt;
+    let wallpaper_engine_directory = wallpaper_engine_directory.trim().to_string();
+    if wallpaper_engine_enabled
+        && wallpaper_engine::find_install(&wallpaper_engine_directory).is_none()
+    {
+        return Err("Wallpaper Engine installation not found".to_string());
+    }
+
     if autostart {
         if let Err(e) = app.autolaunch().enable() {
             app_warn!("[Autostart] Failed to enable: {}", e);
@@ -372,6 +453,8 @@ fn save_settings(
     } else {
         "wallpaper".to_string()
     };
+    config.wallpaper_engine_enabled = wallpaper_engine_enabled;
+    config.wallpaper_engine_directory = wallpaper_engine_directory;
     config.save(&app);
 
     if let Some(window) = app.get_webview_window("main") {
@@ -511,7 +594,7 @@ pub fn run() {
             let config = AppConfig::load(app.handle());
             let shortcut_str = config.shortcut.clone();
             let wallpaper_dir = config.wallpaper_directory.clone();
-            let has_valid_dir = config.has_valid_directory();
+            let has_valid_dir = config.has_valid_source();
             let needs_first_launch_prompt = !config.autostart_prompted;
 
             app_info!("Config loaded: shortcut='{}', dir='{}', autostart={}, prompted={}",
@@ -705,6 +788,7 @@ pub fn run() {
             set_wallpaper,
             get_config,
             set_wallpaper_directory,
+            enable_wallpaper_engine,
             save_settings,
             is_autostart_enabled,
             set_autostart,

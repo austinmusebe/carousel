@@ -1,7 +1,14 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { convertFileSrc } from '@tauri-apps/api/core';
-import { openSettingsWindow, logImageSwitch, logFrontend, isSamePath } from '../lib/tauri';
+import {
+  openSettingsWindow,
+  logImageSwitch,
+  logFrontend,
+  isSamePath,
+  pillResolution,
+  pillTag,
+} from '../lib/tauri';
 import type { WallpaperEntry, BlurMode, BlurSource } from '../types';
 import ColorFilterBar from './ColorFilterBar';
 import './Shardflow.css';
@@ -429,7 +436,7 @@ export default function Shardflow({
       )}
       <div className="shard-stage" onClick={handleBackdropClick}>
         {slots.map((slot) => {
-          const fileExt = slot.img.filename.split('.').pop()?.toUpperCase() || 'IMG';
+          const fileExt = pillTag(slot.img);
           const isHighResReady = loadedHighResMap[slot.img.path];
 
           return (
@@ -474,13 +481,13 @@ export default function Shardflow({
                 <div className="shard-pill">
                   <div className="shard-pill-top">
                     <span className="shard-pill-resolution">
-                      {slot.img.width > 0 && slot.img.height > 0
-                        ? `${slot.img.width} × ${slot.img.height}`
-                        : 'Image'}
+                      {pillResolution(slot.img)}
                     </span>
-                    <span className="shard-pill-filesize">
-                      {formatFileSize(slot.img.file_size)}
-                    </span>
+                    {!slot.img.project && (
+                      <span className="shard-pill-filesize">
+                        {formatFileSize(slot.img.file_size)}
+                      </span>
+                    )}
                   </div>
                   <div className="shard-pill-bottom">
                     <span className="shard-pill-name" title={slot.img.filename}>

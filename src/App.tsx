@@ -9,7 +9,14 @@ import Shardflow from './components/Shardflow';
 import Cardflow from './components/Cardflow';
 import { useWallpapers } from './hooks/useWallpapers';
 import { useKeyboardActions } from './hooks/useKeyboardActions';
-import { getConfig, setWallpaper, logFrontend, getBackdrop } from './lib/tauri';
+import {
+  getConfig,
+  setWallpaper,
+  logFrontend,
+  getBackdrop,
+  hasWallpaperSource,
+  wallpaperSourceKey,
+} from './lib/tauri';
 import { filterAndSortWallpapers } from './lib/colorFilter';
 import type { WallpaperEntry, DisplayMode, BlurMode, BlurSource } from './types';
 import './App.css';
@@ -71,11 +78,9 @@ export default function App() {
           'INFO',
           `[App] Loaded config: dir='${config.wallpaper_directory}', shortcut='${config.shortcut}', display_mode='${config.display_mode}', blur_background=${config.blur_background}, blur_mode='${config.blur_mode}', autostart_prompted=${config.autostart_prompted}`
         );
-        const valid =
-          config.wallpaper_directory !== '' &&
-          config.wallpaper_directory !== null;
+        const valid = hasWallpaperSource(config);
         setHasDirectory(valid);
-        currentDirRef.current = config.wallpaper_directory;
+        currentDirRef.current = wallpaperSourceKey(config);
         if (config.display_mode === 'card') {
           setDisplayMode('card');
         } else if (config.display_mode === 'carousel') {
@@ -153,14 +158,13 @@ export default function App() {
             })
           );
 
-          const valid =
-            config.wallpaper_directory !== '' &&
-            config.wallpaper_directory !== null;
+          const valid = hasWallpaperSource(config);
+          const sourceKey = wallpaperSourceKey(config);
 
           const dirChanged =
             currentDirRef.current !== null &&
-            config.wallpaper_directory !== currentDirRef.current;
-          currentDirRef.current = config.wallpaper_directory;
+            sourceKey !== currentDirRef.current;
+          currentDirRef.current = sourceKey;
 
           if (valid) {
             setHasDirectory(true);
@@ -192,7 +196,7 @@ export default function App() {
     hasTriggeredScanRef.current = true;
     getConfig()
       .then((cfg) => {
-        currentDirRef.current = cfg.wallpaper_directory;
+        currentDirRef.current = wallpaperSourceKey(cfg);
       })
       .catch(() => {});
     refresh();
@@ -200,7 +204,7 @@ export default function App() {
 
   const handleSetWallpaper = useCallback(async (entry: WallpaperEntry) => {
     try {
-      await setWallpaper(entry.path);
+      await setWallpaper(entry);
       setLastWallpaper(entry.path);
       await getCurrentWindow().hide();
     } catch (e) {

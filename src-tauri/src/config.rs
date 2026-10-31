@@ -34,6 +34,11 @@ pub struct AppConfig {
     pub blur_source: String,
     #[serde(default)]
     pub last_wallpaper: Option<String>,
+    #[serde(default)]
+    pub wallpaper_engine_enabled: bool,
+    /// Wallpaper Engine install folder; empty means auto-detect through Steam
+    #[serde(default)]
+    pub wallpaper_engine_directory: String,
 }
 
 impl Default for AppConfig {
@@ -48,6 +53,8 @@ impl Default for AppConfig {
             blur_mode: default_blur_mode(),
             blur_source: default_blur_source(),
             last_wallpaper: None,
+            wallpaper_engine_enabled: false,
+            wallpaper_engine_directory: String::new(),
         }
     }
 }
@@ -185,6 +192,10 @@ impl AppConfig {
         }
         std::path::Path::new(&self.wallpaper_directory).is_dir()
     }
+
+    pub fn has_valid_source(&self) -> bool {
+        self.wallpaper_engine_enabled || self.has_valid_directory()
+    }
 }
 
 #[cfg(test)]
@@ -244,6 +255,15 @@ mod tests {
         }"#;
         let config: AppConfig = serde_json::from_str(json).expect("should parse");
         assert_eq!(config.display_mode, "card");
+    }
+
+    #[test]
+    fn test_wallpaper_engine_alone_is_a_valid_source() {
+        let mut config = AppConfig::default();
+        assert!(!config.has_valid_source());
+        config.wallpaper_engine_enabled = true;
+        assert!(config.has_valid_source());
+        assert!(!config.has_valid_directory());
     }
 
     #[test]

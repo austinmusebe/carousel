@@ -12,6 +12,8 @@ export interface WallpaperEntry {
   file_size: number; // bytes
   primary_color?: string | null;
   colors?: ColorScore[];
+  project?: string | null; // project.json for Wallpaper Engine entries; path is then its preview
+  project_type?: string | null;
 }
 
 export type DisplayMode = 'carousel' | 'shard' | 'card';
@@ -28,5 +30,7 @@ export interface AppConfig {
   blur_mode?: BlurMode;
   blur_source?: BlurSource;
   last_wallpaper?: string | null;
+  wallpaper_engine_enabled?: boolean;
+  wallpaper_engine_directory?: string;
 }
 

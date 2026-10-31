@@ -14,8 +14,34 @@ export async function scanWallpapers(): Promise<WallpaperEntry[]> {
   return invoke<WallpaperEntry[]>('scan_wallpapers');
 }
 
-export async function setWallpaper(path: string): Promise<void> {
-  return invoke('set_wallpaper', { path });
+export function hasWallpaperSource(config: AppConfig): boolean {
+  return Boolean(config.wallpaper_directory) || Boolean(config.wallpaper_engine_enabled);
+}
+
+export function wallpaperSourceKey(config: AppConfig): string {
+  return [
+    config.wallpaper_directory,
+    config.wallpaper_engine_enabled,
+    config.wallpaper_engine_directory,
+  ].join('|');
+}
+
+export function pillResolution(entry: WallpaperEntry): string {
+  if (entry.project) return 'Wallpaper Engine';
+  return entry.width > 0 && entry.height > 0 ? `${entry.width} × ${entry.height}` : 'Image';
+}
+
+export function pillTag(entry: WallpaperEntry): string {
+  if (entry.project) return entry.project_type?.toUpperCase() || 'LIVE';
+  return entry.filename.split('.').pop()?.toUpperCase() || 'IMG';
+}
+
+export async function setWallpaper(entry: WallpaperEntry): Promise<void> {
+  return invoke('set_wallpaper', { path: entry.path, project: entry.project ?? null });
+}
+
+export async function enableWallpaperEngine(): Promise<void> {
+  return invoke('enable_wallpaper_engine');
 }
 
 export async function getConfig(): Promise<AppConfig> {
@@ -37,7 +63,9 @@ export async function saveSettings(
   displayMode: string = 'shard',
   blurBackground: boolean = false,
   blurMode: string = 'fullscreen',
-  blurSource: string = 'wallpaper'
+  blurSource: string = 'wallpaper',
+  wallpaperEngineEnabled: boolean = false,
+  wallpaperEngineDirectory: string = ''
 ): Promise<void> {
   return invoke('save_settings', {
     shortcut,
@@ -47,6 +75,8 @@ export async function saveSettings(
     blurBackground,
     blurMode,
     blurSource,
+    wallpaperEngineEnabled,
+    wallpaperEngineDirectory,
   });
 }
 

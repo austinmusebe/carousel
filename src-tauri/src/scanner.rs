@@ -31,6 +31,10 @@ pub struct WallpaperEntry {
     pub file_size: u64, // bytes
     pub primary_color: Option<String>,
     pub colors: Vec<ColorScore>,
+    /// Absolute path to project.json for Wallpaper Engine entries; `path` is then its preview
+    pub project: Option<String>,
+    /// Wallpaper Engine project type, e.g. "scene", "video", "web"
+    pub project_type: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -47,6 +51,12 @@ struct GeneratedThumbnail {
     height: u32,
     primary_color: Option<String>,
     colors: Vec<ColorScore>,
+}
+
+pub fn clean_path(path: &Path) -> Option<String> {
+    let abs_path = fs::canonicalize(path).ok()?;
+    let s = abs_path.to_string_lossy();
+    Some(s.strip_prefix(r"\\?\").unwrap_or(&s).to_string())
 }
 
 fn cache_key(path: &Path, mtime: SystemTime) -> String {
@@ -204,15 +214,9 @@ pub fn analyze_image_colors(img: &image::DynamicImage) -> (Option<String>, Vec<C
 }
 
 pub fn scan_directory(dir_path: &str, cache_dir: &Path) -> Result<Vec<WallpaperEntry>, String> {
-    let scan_start = std::time::Instant::now();
     let dir = Path::new(dir_path);
     if !dir.is_dir() {
         return Err(format!("Not a directory: {}", dir_path));
-    }
-
-    if !cache_dir.is_dir() {
-        fs::create_dir_all(cache_dir)
-            .map_err(|e| format!("Failed to create cache directory: {}", e))?;
     }
 
     let read_dir = fs::read_dir(dir).map_err(|e| format!("Failed to read directory: {}", e))?;
@@ -239,6 +243,17 @@ pub fn scan_directory(dir_path: &str, cache_dir: &Path) -> Result<Vec<WallpaperE
         })
         .collect();
 
+    scan_files(&files, cache_dir)
+}
+
+pub fn scan_files(files: &[PathBuf], cache_dir: &Path) -> Result<Vec<WallpaperEntry>, String> {
+    let scan_start = std::time::Instant::now();
+
+    if !cache_dir.is_dir() {
+        fs::create_dir_all(cache_dir)
+            .map_err(|e| format!("Failed to create cache directory: {}", e))?;
+    }
+
     let cache_hits = AtomicUsize::new(0);
     let cache_misses = AtomicUsize::new(0);
 
@@ -252,13 +267,7 @@ pub fn scan_directory(dir_path: &str, cache_dir: &Path) -> Result<Vec<WallpaperE
                 .unwrap_or("unknown")
                 .to_string();
 
-            let abs_path = match std::fs::canonicalize(path) {
-                Ok(p) => {
-                    let s = p.to_string_lossy().to_string();
-                    s.strip_prefix(r"\\?\").unwrap_or(&s).to_string()
-                }
-                Err(_) => return None,
-            };
+            let abs_path = clean_path(path)?;
 
             let metadata = match fs::metadata(path) {
                 Ok(m) => m,
@@ -374,6 +383,8 @@ pub fn scan_directory(dir_path: &str, cache_dir: &Path) -> Result<Vec<WallpaperE
                 file_size,
                 primary_color,
                 colors,
+                project: None,
+                project_type: None,
             })
         })
         .collect();
