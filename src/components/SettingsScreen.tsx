@@ -8,7 +8,15 @@ import {
   quitApp,
   logFrontend,
 } from '../lib/tauri';
-import type { DisplayMode, BlurMode, BlurSource } from '../types';
+import type {
+  DisplayMode,
+  BlurMode,
+  BlurSource,
+  GeometricTile,
+  GeometricCurve,
+  StyleflowMode,
+  WallLayout,
+} from '../types';
 import './SettingsScreen.css';
 
 const SHORTCUT_PRESETS = [
@@ -18,6 +26,74 @@ const SHORTCUT_PRESETS = [
   'Ctrl+Shift+W',
 ];
 
+const STYLE_OPTIONS: {
+  mode: StyleflowMode | 'random';
+  title: string;
+  badge: string;
+  desc: string;
+}[] = [
+  { mode: 'depth', title: 'Depth', badge: '3D', desc: 'Cards recede into the distance behind the chosen one.' },
+  { mode: 'geometric', title: 'Geometric', badge: 'Tiles', desc: 'A field of shaped tiles you can bend into curves.' },
+  { mode: 'wall', title: 'Wall', badge: 'Grid', desc: 'Browse everything at once in a scrolling wall.' },
+  { mode: 'sandy', title: 'Sandy', badge: 'Particles', desc: 'A large preview that blows away as sand when you switch.' },
+  { mode: 'hand', title: 'Card Hand', badge: 'Arc', desc: 'Upright cards held in a wide arc, like a hand of cards.' },
+  { mode: 'collection', title: 'Collection', badge: 'Stacks', desc: 'One large card between two tilted piles.' },
+  { mode: 'duel', title: 'Duel', badge: 'Slant', desc: 'A slanted row whose cards narrow with distance.' },
+  { mode: 'random', title: 'Random', badge: 'Surprise', desc: 'A different style every time you open the gallery.' },
+];
+
+const TILE_OPTIONS: { value: GeometricTile; label: string }[] = [
+  { value: 'hexagon', label: 'Hexagon' },
+  { value: 'triangle', label: 'Triangle' },
+  { value: 'diamond', label: 'Diamond' },
+  { value: 'rhombus', label: 'Rhombus' },
+];
+
+const CURVE_OPTIONS: { value: GeometricCurve; label: string }[] = [
+  { value: 'flat', label: 'Plane' },
+  { value: 'arc', label: 'Bow' },
+  { value: 'wave', label: 'Ribbon' },
+  { value: 's', label: 'S sweep' },
+  { value: 'cylinder', label: 'Cylinder' },
+];
+
+const WALL_OPTIONS: { value: WallLayout; label: string }[] = [
+  { value: 'uniform', label: 'Uniform' },
+  { value: 'brick', label: 'Brick' },
+  { value: 'masonry', label: 'Masonry' },
+  { value: 'justified', label: 'Justified' },
+  { value: 'editorial', label: 'Editorial' },
+  { value: 'cylinder', label: 'Cylinder' },
+];
+
+function ChipRow<T extends string>({
+  caption,
+  options,
+  value,
+  onChange,
+}: {
+  caption: string;
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div className="presets-row">
+      <span className="presets-caption">{caption}:</span>
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          className={`preset-chip ${value === option.value ? 'active' : ''}`}
+          onClick={() => onChange(option.value)}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function SettingsScreen() {
   const [directory, setDirectory] = useState('');
   const [wallpaperEngineEnabled, setWallpaperEngineEnabled] = useState(false);
@@ -25,6 +101,9 @@ export default function SettingsScreen() {
   const [shortcut, setShortcut] = useState('Alt+W');
   const [autostart, setAutostart] = useState(false);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('shard');
+  const [geometricTile, setGeometricTile] = useState<GeometricTile>('hexagon');
+  const [geometricCurve, setGeometricCurve] = useState<GeometricCurve>('flat');
+  const [wallLayout, setWallLayout] = useState<WallLayout>('uniform');
   const [blurBackground, setBlurBackground] = useState(false);
   const [blurMode, setBlurMode] = useState<BlurMode>('fullscreen');
   const [blurSource, setBlurSource] = useState<BlurSource>('wallpaper');
@@ -41,6 +120,9 @@ export default function SettingsScreen() {
         setWallpaperEngineDirectory(cfg.wallpaper_engine_directory || '');
         setShortcut(cfg.shortcut || 'Alt+W');
         setDisplayMode(cfg.display_mode || 'shard');
+        setGeometricTile(cfg.geometric_tile || 'hexagon');
+        setGeometricCurve(cfg.geometric_curve || 'flat');
+        setWallLayout(cfg.wall_layout || 'uniform');
         setBlurBackground(cfg.blur_background ?? false);
         setBlurMode(cfg.blur_mode || 'fullscreen');
         setBlurSource(cfg.blur_source || 'wallpaper');
@@ -106,7 +188,10 @@ export default function SettingsScreen() {
         blurMode,
         blurSource,
         wallpaperEngineEnabled,
-        wallpaperEngineDirectory
+        wallpaperEngineDirectory,
+        geometricTile,
+        geometricCurve,
+        wallLayout
       );
       setStatusMessage('Settings saved successfully');
       setIsError(false);
@@ -321,7 +406,56 @@ export default function SettingsScreen() {
                 </p>
               </div>
             </button>
+
+            {STYLE_OPTIONS.map((option) => (
+              <button
+                key={option.mode}
+                type="button"
+                className={`display-option-card ${displayMode === option.mode ? 'active' : ''}`}
+                onClick={() => setDisplayMode(option.mode)}
+              >
+                <div className={`display-option-preview preview-style preview-style-${option.mode}`}>
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                </div>
+                <div className="display-option-info">
+                  <div className="display-option-header">
+                    <span className="display-option-title">{option.title}</span>
+                    <span className="display-option-badge">{option.badge}</span>
+                  </div>
+                  <p className="display-option-desc">{option.desc}</p>
+                </div>
+              </button>
+            ))}
           </div>
+
+          {displayMode === 'geometric' && (
+            <>
+              <ChipRow
+                caption="Tile"
+                options={TILE_OPTIONS}
+                value={geometricTile}
+                onChange={setGeometricTile}
+              />
+              <ChipRow
+                caption="Shape"
+                options={CURVE_OPTIONS}
+                value={geometricCurve}
+                onChange={setGeometricCurve}
+              />
+            </>
+          )}
+
+          {displayMode === 'wall' && (
+            <ChipRow
+              caption="Layout"
+              options={WALL_OPTIONS}
+              value={wallLayout}
+              onChange={setWallLayout}
+            />
+          )}
         </section>
 
         {/* Section: Background Blur */}

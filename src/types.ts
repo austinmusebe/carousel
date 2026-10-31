@@ -16,7 +16,19 @@ export interface WallpaperEntry {
   project_type?: string | null;
 }
 
-export type DisplayMode = 'carousel' | 'shard' | 'card';
+export type StyleflowMode =
+  | 'depth'
+  | 'geometric'
+  | 'wall'
+  | 'sandy'
+  | 'hand'
+  | 'collection'
+  | 'duel';
+export type RollableMode = 'carousel' | 'shard' | 'card' | StyleflowMode;
+export type DisplayMode = RollableMode | 'random';
+export type GeometricTile = 'hexagon' | 'triangle' | 'diamond' | 'rhombus';
+export type GeometricCurve = 'flat' | 'arc' | 'wave' | 's' | 'cylinder';
+export type WallLayout = 'uniform' | 'brick' | 'masonry' | 'justified' | 'editorial' | 'cylinder';
 export type BlurMode = 'fullscreen' | 'window';
 export type BlurSource = 'screen' | 'wallpaper';
 
@@ -26,6 +38,9 @@ export interface AppConfig {
   autostart?: boolean;
   autostart_prompted?: boolean;
   display_mode?: DisplayMode;
+  geometric_tile?: GeometricTile;
+  geometric_curve?: GeometricCurve;
+  wall_layout?: WallLayout;
   blur_background?: boolean;
   blur_mode?: BlurMode;
   blur_source?: BlurSource;

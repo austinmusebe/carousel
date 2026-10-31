@@ -251,6 +251,12 @@ fn collect_wallpapers(
         }
     }
 
+    // The directory rule alone answers 403 for cached thumbnails after a restart
+    let scope = app.asset_protocol_scope();
+    for entry in &entries {
+        let _ = scope.allow_file(&entry.thumbnail);
+    }
+
     Ok(entries)
 }
 
@@ -413,6 +419,9 @@ fn save_settings(
     blur_source: Option<String>,
     wallpaper_engine_enabled: bool,
     wallpaper_engine_directory: String,
+    geometric_tile: String,
+    geometric_curve: String,
+    wall_layout: String,
 ) -> Result<(), String> {
     use tauri_plugin_autostart::ManagerExt;
     let wallpaper_engine_directory = wallpaper_engine_directory.trim().to_string();
@@ -437,11 +446,10 @@ fn save_settings(
     config.wallpaper_directory = directory.clone();
     config.autostart = autostart;
     config.autostart_prompted = true;
-    config.display_mode = match display_mode.as_str() {
-        "shard" => "shard".to_string(),
-        "card" => "card".to_string(),
-        _ => "carousel".to_string(),
-    };
+    config.display_mode = config::pick_option(&display_mode, config::DISPLAY_MODES);
+    config.geometric_tile = config::pick_option(&geometric_tile, config::GEOMETRIC_TILES);
+    config.geometric_curve = config::pick_option(&geometric_curve, config::GEOMETRIC_CURVES);
+    config.wall_layout = config::pick_option(&wall_layout, config::WALL_LAYOUTS);
     config.blur_background = blur_background;
     config.blur_mode = if blur_mode == "window" {
         "window".to_string()

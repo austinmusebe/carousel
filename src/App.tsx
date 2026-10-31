@@ -7,6 +7,7 @@ import AutostartPromptModal from './components/AutostartPromptModal';
 import Coverflow from './components/Coverflow';
 import Shardflow from './components/Shardflow';
 import Cardflow from './components/Cardflow';
+import Styleflow from './components/Styleflow';
 import { useWallpapers } from './hooks/useWallpapers';
 import { useKeyboardActions } from './hooks/useKeyboardActions';
 import {
@@ -18,7 +19,18 @@ import {
   wallpaperSourceKey,
 } from './lib/tauri';
 import { filterAndSortWallpapers } from './lib/colorFilter';
-import type { WallpaperEntry, DisplayMode, BlurMode, BlurSource } from './types';
+import { isStyleflowMode, parseDisplayMode, rollStyle } from './lib/styleLayouts';
+import type { StyleRoll } from './lib/styleLayouts';
+import type {
+  AppConfig,
+  WallpaperEntry,
+  DisplayMode,
+  BlurMode,
+  BlurSource,
+  GeometricTile,
+  GeometricCurve,
+  WallLayout,
+} from './types';
 import './App.css';
 
 export default function App() {
@@ -29,6 +41,9 @@ export default function App() {
   const [hasDirectory, setHasDirectory] = useState<boolean | null>(null);
   const [showAutostartPrompt, setShowAutostartPrompt] = useState(false);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('shard');
+  const [geometricTile, setGeometricTile] = useState<GeometricTile>('hexagon');
+  const [geometricCurve, setGeometricCurve] = useState<GeometricCurve>('flat');
+  const [wallLayout, setWallLayout] = useState<WallLayout>('uniform');
   const [blurBackground, setBlurBackground] = useState<boolean>(false);
   const [blurMode, setBlurMode] = useState<BlurMode>('fullscreen');
   const [blurSource, setBlurSource] = useState<BlurSource>('wallpaper');
@@ -40,6 +55,30 @@ export default function App() {
   const currentDirRef = useRef<string | null>(null);
   const errorRef = useRef<string | null>(null);
   errorRef.current = error;
+
+  const styleRollRef = useRef<StyleRoll | null>(null);
+
+  const applyStyleConfig = useCallback((config: AppConfig, reroll = false) => {
+    const mode = parseDisplayMode(config.display_mode);
+    if (mode === 'random') {
+      if (reroll || !styleRollRef.current) {
+        styleRollRef.current = rollStyle(styleRollRef.current?.mode);
+      }
+      const roll = styleRollRef.current;
+      logFrontend('INFO', `[App] Random style: ${roll.mode}`);
+      setDisplayMode(roll.mode);
+      setGeometricTile(roll.tile);
+      setGeometricCurve(roll.curve);
+      setWallLayout(roll.wall);
+      return;
+    }
+
+    styleRollRef.current = null;
+    setDisplayMode(mode);
+    if (config.geometric_tile) setGeometricTile(config.geometric_tile);
+    if (config.geometric_curve) setGeometricCurve(config.geometric_curve);
+    if (config.wall_layout) setWallLayout(config.wall_layout);
+  }, []);
 
   const filteredImages = useMemo(() => {
     return filterAndSortWallpapers(images, selectedColor);
@@ -81,13 +120,7 @@ export default function App() {
         const valid = hasWallpaperSource(config);
         setHasDirectory(valid);
         currentDirRef.current = wallpaperSourceKey(config);
-        if (config.display_mode === 'card') {
-          setDisplayMode('card');
-        } else if (config.display_mode === 'carousel') {
-          setDisplayMode('carousel');
-        } else {
-          setDisplayMode('shard');
-        }
+        applyStyleConfig(config);
         if (typeof config.blur_background === 'boolean') {
           setBlurBackground(config.blur_background);
         }
@@ -117,11 +150,11 @@ export default function App() {
         logFrontend('ERROR', `[App] Failed to load config: ${e}`);
         setHasDirectory(false);
       });
-  }, [refresh]);
+  }, [refresh, applyStyleConfig]);
 
   // Update display mode, backdrop, and reset to last wallpaper on window focus / show
   useEffect(() => {
-    const handleReopen = () => {
+    const handleReopen = (reroll: boolean) => {
       setSelectedColor(null);
       getBackdrop()
         .then((img) => {
@@ -134,15 +167,7 @@ export default function App() {
           if (config.last_wallpaper !== undefined) {
             setLastWallpaper(config.last_wallpaper);
           }
-          if (config.display_mode) {
-            if (config.display_mode === 'card') {
-              setDisplayMode('card');
-            } else if (config.display_mode === 'carousel') {
-              setDisplayMode('carousel');
-            } else {
-              setDisplayMode('shard');
-            }
-          }
+          applyStyleConfig(config, reroll);
           if (typeof config.blur_background === 'boolean') {
             setBlurBackground(config.blur_background);
           }
@@ -182,14 +207,16 @@ export default function App() {
         .catch(() => {});
     };
 
-    window.addEventListener('focus', handleReopen);
-    const unlistenPromise = listen('window-shown', handleReopen);
+    // Focus also fires while the gallery stays open, so only a real show re-rolls Random
+    const handleFocus = () => handleReopen(false);
+    window.addEventListener('focus', handleFocus);
+    const unlistenPromise = listen('window-shown', () => handleReopen(true));
 
     return () => {
-      window.removeEventListener('focus', handleReopen);
+      window.removeEventListener('focus', handleFocus);
       unlistenPromise.then((unlisten) => unlisten());
     };
-  }, [refresh]);
+  }, [refresh, applyStyleConfig]);
 
   const handleDirectorySet = useCallback(() => {
     setHasDirectory(true);
@@ -263,7 +290,24 @@ export default function App() {
       {showAutostartPrompt && (
         <AutostartPromptModal onDone={() => setShowAutostartPrompt(false)} />
       )}
-      {displayMode === 'card' ? (
+      {isStyleflowMode(displayMode) ? (
+        <Styleflow
+          mode={displayMode}
+          geometricTile={geometricTile}
+          geometricCurve={geometricCurve}
+          wallLayout={wallLayout}
+          images={filteredImages}
+          onSetWallpaper={handleSetWallpaper}
+          onRefresh={handleRefresh}
+          blurBackground={blurBackground}
+          blurMode={blurMode}
+          blurSource={blurSource}
+          backdropImage={backdropImage}
+          lastWallpaper={lastWallpaper}
+          selectedColor={selectedColor}
+          onSelectColor={setSelectedColor}
+        />
+      ) : displayMode === 'card' ? (
         <Cardflow
           images={filteredImages}
           onSetWallpaper={handleSetWallpaper}

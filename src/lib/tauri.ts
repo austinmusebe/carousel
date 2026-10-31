@@ -65,7 +65,10 @@ export async function saveSettings(
   blurMode: string = 'fullscreen',
   blurSource: string = 'wallpaper',
   wallpaperEngineEnabled: boolean = false,
-  wallpaperEngineDirectory: string = ''
+  wallpaperEngineDirectory: string = '',
+  geometricTile: string = 'hexagon',
+  geometricCurve: string = 'flat',
+  wallLayout: string = 'uniform'
 ): Promise<void> {
   return invoke('save_settings', {
     shortcut,
@@ -77,6 +80,9 @@ export async function saveSettings(
     blurSource,
     wallpaperEngineEnabled,
     wallpaperEngineDirectory,
+    geometricTile,
+    geometricCurve,
+    wallLayout,
   });
 }
 

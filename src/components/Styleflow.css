@@ -1,0 +1,115 @@
+.style-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  perspective: 1500px;
+  z-index: 1;
+}
+
+.style-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  overflow: hidden;
+  box-sizing: border-box;
+  background: #111114;
+  transition:
+    transform 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+    width 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+    height 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.26s ease;
+  will-change: transform;
+}
+
+.style-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.42);
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.style-card.inactive {
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.style-card.inactive:hover::after {
+  opacity: 0.15;
+}
+
+.style-card.active {
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+}
+
+.style-card.active::after {
+  opacity: 0;
+}
+
+.style-card.clipped {
+  border: none;
+  box-shadow: none;
+}
+
+.style-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Scaled so the counter-skew leaves no empty corners inside the slanted card */
+.style-image.skewed {
+  transform: skewX(var(--unskew)) scale(1.3);
+}
+
+.style-pill {
+  position: absolute;
+  left: max(8%, 28px);
+  bottom: 22px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 14px;
+  background: rgba(9, 9, 11, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+.sand-hero {
+  position: absolute;
+  z-index: 15;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  border-radius: 10px;
+  box-sizing: border-box;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+}
+
+.sand-hero img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.sand-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 35;
+  pointer-events: none;
+}

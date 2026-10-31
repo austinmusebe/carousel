@@ -150,18 +150,42 @@ using each project's title and animated preview. When you apply one:
 Applying a regular image while Wallpaper Engine is running closes the active Wallpaper Engine
 wallpaper, so that the image is visible on the desktop.
 
-### 6.3 Global Shortcut
+### 6.3 Display Options
+
+Select the gallery style in Settings:
+
+| Style       | Layout                                                                |
+| ----------- | --------------------------------------------------------------------- |
+| Carousel    | Horizontal card stack with a center focus.                            |
+| Shard       | Angled strips with one large card.                                    |
+| Cardflow    | Fanned rounded cards.                                                 |
+| Depth       | Cards recede into the distance behind the active card.                |
+| Geometric   | A field of tiles. Select the tile shape and the curve of the field.   |
+| Wall        | A scrolling grid. Select one of six layouts.                          |
+| Sandy       | A large preview above a strip. The old image blows away as sand.      |
+| Card Hand   | Upright cards held in a wide arc.                                     |
+| Collection  | One large card between two tilted piles.                              |
+| Duel        | A slanted row of cards that narrow with distance.                     |
+| Random      | A different style, tile and layout each time the gallery opens.       |
+
+In Geometric and Wall, the arrow keys (or `h`, `j`, `k`, `l`) move in all four directions.
+
+The Depth, Geometric, Wall, Sandy, Card Hand, Collection and Duel styles are original
+recreations of the picker styles in [Ryoku](https://github.com/Ryoku-dev/ryoku) and
+[skwd-wall](https://github.com/liixini/skwd-wall). They do not contain code from those projects.
+
+### 6.4 Global Shortcut
 
 1. Click an available preset (`Alt+W`, `Ctrl+Alt+W`, `Alt+Space`, `Ctrl+Shift+W`).
 2. Alternatively, enter a custom key combination in the input field.
 3. Click `Save changes` to apply the new shortcut.
 
-### 6.4 Reload Directory Shortcut
+### 6.5 Reload Directory Shortcut
 
 Press `R` while the wallpaper gallery is open to check for newly added or removed images.
 This shortcut is built into the application and cannot be changed.
 
-### 6.5 Configuration Storage
+### 6.6 Configuration Storage
 
 The application saves settings in a JSON file at this location:
 
