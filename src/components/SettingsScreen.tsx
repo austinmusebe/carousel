@@ -237,6 +237,27 @@ export default function SettingsScreen() {
                 </p>
               </div>
             </button>
+
+            <button
+              type="button"
+              className={`display-option-card ${displayMode === 'card' ? 'active' : ''}`}
+              onClick={() => setDisplayMode('card')}
+            >
+              <div className="display-option-preview">
+                <div className="preview-card-cardflow left" />
+                <div className="preview-card-cardflow center" />
+                <div className="preview-card-cardflow right" />
+              </div>
+              <div className="display-option-info">
+                <div className="display-option-header">
+                  <span className="display-option-title">Cardflow</span>
+                  <span className="display-option-badge">Fan</span>
+                </div>
+                <p className="display-option-desc">
+                  Fanned rounded cards with soft rotation and depth.
+                </p>
+              </div>
+            </button>
           </div>
         </section>
 

@@ -1,0 +1,406 @@
+.card-viewport {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 4%,
+    black 96%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 4%,
+    black 96%,
+    transparent 100%
+  );
+}
+
+.card-viewport.blur-window {
+  border-radius: 12px;
+  border: 1px solid rgba(185, 178, 178, 0.12);
+  background: rgba(166, 166, 170, 0.4);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
+.card-viewport.blur-fullscreen {
+  background: rgba(10, 10, 14, 0.22);
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
+.desktop-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(40px) brightness(0.75);
+  transform: scale(1.08);
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+.wallpaper-backdrop-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.desktop-backdrop.wallpaper-backdrop {
+  filter: blur(50px) brightness(0.75) saturate(1.2);
+  transform: scale(1.15);
+}
+
+.desktop-backdrop.wallpaper-backdrop.high-res {
+  transition: opacity 0.25s ease;
+}
+
+.card-stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  z-index: 1;
+}
+
+/* Card Slot Base */
+.card-slot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 270px;
+  height: 410px;
+  max-height: 60vh;
+  border-radius: 26px;
+  overflow: hidden;
+  box-sizing: border-box;
+  contain: paint layout;
+  transform-origin: center center;
+  transition:
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s ease,
+    border-color 0.22s ease;
+  will-change: transform, opacity;
+}
+
+.card-slot::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 10;
+}
+
+/* Card Fan Offset Positions */
+.card-slot.offset-0 {
+  transform: translate3d(-50%, -50%, 0) scale(1) rotate(0deg);
+  z-index: 30;
+  opacity: 1;
+}
+
+.card-slot.offset-neg-1 {
+  transform: translate3d(calc(-50% - 220px), calc(-50% + 14px), 0) rotate(-12deg) scale(0.93);
+  z-index: 25;
+  opacity: 1;
+}
+
+.card-slot.offset-pos-1 {
+  transform: translate3d(calc(-50% + 220px), calc(-50% + 14px), 0) rotate(12deg) scale(0.93);
+  z-index: 25;
+  opacity: 1;
+}
+
+.card-slot.offset-neg-2 {
+  transform: translate3d(calc(-50% - 410px), calc(-50% + 44px), 0) rotate(-22deg) scale(0.85);
+  z-index: 20;
+  opacity: 1;
+}
+
+.card-slot.offset-pos-2 {
+  transform: translate3d(calc(-50% + 410px), calc(-50% + 44px), 0) rotate(22deg) scale(0.85);
+  z-index: 20;
+  opacity: 1;
+}
+
+.card-slot.offset-neg-3 {
+  transform: translate3d(calc(-50% - 580px), calc(-50% + 90px), 0) rotate(-30deg) scale(0.76);
+  z-index: 15;
+  opacity: 1;
+}
+
+.card-slot.offset-pos-3 {
+  transform: translate3d(calc(-50% + 580px), calc(-50% + 90px), 0) rotate(30deg) scale(0.76);
+  z-index: 15;
+  opacity: 1;
+}
+
+.card-slot.offset-hidden-left {
+  transform: translate3d(calc(-50% - 740px), calc(-50% + 140px), 0) rotate(-38deg) scale(0.65);
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.card-slot.offset-hidden-right {
+  transform: translate3d(calc(-50% + 740px), calc(-50% + 140px), 0) rotate(38deg) scale(0.65);
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Card Active / Inactive States */
+.card-slot.active {
+  border: 2px solid rgba(255, 255, 255, 0.65);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.85),
+    0 0 0 1px rgba(255, 255, 255, 0.15),
+    0 0 32px rgba(255, 255, 255, 0.08);
+}
+
+.card-slot.active::after {
+  opacity: 0;
+}
+
+.card-slot.inactive {
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65);
+}
+
+.card-slot.inactive::after {
+  opacity: 0.45;
+}
+
+.card-slot.inactive:hover::after {
+  opacity: 0.18;
+}
+
+.card-slot.inactive:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+/* Card Images */
+.card-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+.card-image.thumb-layer {
+  z-index: 1;
+}
+
+.card-image.full-layer {
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-image.full-layer.is-loaded {
+  opacity: 1;
+}
+
+/* Pill badge on active card */
+.card-pill {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
+  z-index: 50;
+  background: rgba(9, 9, 11, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 8px 12px;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.card-pill-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-pill-resolution {
+  color: #f4f4f5;
+  font-family: "SF Mono", "Cascadia Code", "Consolas", monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.card-pill-filesize {
+  color: #a1a1aa;
+  font-family: "SF Mono", "Cascadia Code", "Consolas", monospace;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.card-pill-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.card-pill-name {
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.2px;
+  flex: 1;
+}
+
+.card-pill-tag {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* Empty State */
+.card-empty {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  gap: 16px;
+  font-size: 15px;
+}
+
+.card-settings-link {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  padding: 8px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.card-settings-link:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.card-show-all-btn {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  padding: 8px 22px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-show-all-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.card-empty.color-empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: auto;
+  height: auto;
+  z-index: 10;
+}
+
+/* Refresh Notification Toast */
+.card-toast {
+  position: absolute;
+  top: max(16px, calc(50vh - 205px - 88px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(9, 9, 11, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  padding: 6px 16px;
+  color: #f4f4f5;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  animation: card-toast-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-toast-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+@keyframes card-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}

@@ -6,6 +6,7 @@ import SettingsScreen from './components/SettingsScreen';
 import AutostartPromptModal from './components/AutostartPromptModal';
 import Coverflow from './components/Coverflow';
 import Shardflow from './components/Shardflow';
+import Cardflow from './components/Cardflow';
 import { useWallpapers } from './hooks/useWallpapers';
 import { useKeyboardActions } from './hooks/useKeyboardActions';
 import { getConfig, setWallpaper, logFrontend, getBackdrop } from './lib/tauri';
@@ -75,7 +76,9 @@ export default function App() {
           config.wallpaper_directory !== null;
         setHasDirectory(valid);
         currentDirRef.current = config.wallpaper_directory;
-        if (config.display_mode === 'carousel') {
+        if (config.display_mode === 'card') {
+          setDisplayMode('card');
+        } else if (config.display_mode === 'carousel') {
           setDisplayMode('carousel');
         } else {
           setDisplayMode('shard');
@@ -127,7 +130,13 @@ export default function App() {
             setLastWallpaper(config.last_wallpaper);
           }
           if (config.display_mode) {
-            setDisplayMode(config.display_mode === 'shard' ? 'shard' : 'carousel');
+            if (config.display_mode === 'card') {
+              setDisplayMode('card');
+            } else if (config.display_mode === 'carousel') {
+              setDisplayMode('carousel');
+            } else {
+              setDisplayMode('shard');
+            }
           }
           if (typeof config.blur_background === 'boolean') {
             setBlurBackground(config.blur_background);
@@ -250,7 +259,20 @@ export default function App() {
       {showAutostartPrompt && (
         <AutostartPromptModal onDone={() => setShowAutostartPrompt(false)} />
       )}
-      {displayMode === 'shard' ? (
+      {displayMode === 'card' ? (
+        <Cardflow
+          images={filteredImages}
+          onSetWallpaper={handleSetWallpaper}
+          onRefresh={handleRefresh}
+          blurBackground={blurBackground}
+          blurMode={blurMode}
+          blurSource={blurSource}
+          backdropImage={backdropImage}
+          lastWallpaper={lastWallpaper}
+          selectedColor={selectedColor}
+          onSelectColor={setSelectedColor}
+        />
+      ) : displayMode === 'shard' ? (
         <Shardflow
           images={filteredImages}
           onSetWallpaper={handleSetWallpaper}

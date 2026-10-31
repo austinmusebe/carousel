@@ -236,6 +236,17 @@ mod tests {
     }
 
     #[test]
+    fn test_card_display_mode_parsing() {
+        let json = r#"{
+            "shortcut": "Alt+W",
+            "wallpaper_directory": "C:\\Wallpapers",
+            "display_mode": "card"
+        }"#;
+        let config: AppConfig = serde_json::from_str(json).expect("should parse");
+        assert_eq!(config.display_mode, "card");
+    }
+
+    #[test]
     fn test_write_and_sync_creates_and_overwrites() {
         let tmp_dir = std::env::temp_dir().join("carousel_test_config");
         let _ = fs::create_dir_all(&tmp_dir);

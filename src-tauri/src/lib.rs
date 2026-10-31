@@ -356,10 +356,10 @@ fn save_settings(
     config.wallpaper_directory = directory.clone();
     config.autostart = autostart;
     config.autostart_prompted = true;
-    config.display_mode = if display_mode == "shard" {
-        "shard".to_string()
-    } else {
-        "carousel".to_string()
+    config.display_mode = match display_mode.as_str() {
+        "shard" => "shard".to_string(),
+        "card" => "card".to_string(),
+        _ => "carousel".to_string(),
     };
     config.blur_background = blur_background;
     config.blur_mode = if blur_mode == "window" {

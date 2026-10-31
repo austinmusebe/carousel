@@ -14,7 +14,7 @@ export interface WallpaperEntry {
   colors?: ColorScore[];
 }
 
-export type DisplayMode = 'carousel' | 'shard';
+export type DisplayMode = 'carousel' | 'shard' | 'card';
 export type BlurMode = 'fullscreen' | 'window';
 export type BlurSource = 'screen' | 'wallpaper';
 

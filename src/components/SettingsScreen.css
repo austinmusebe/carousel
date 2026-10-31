@@ -200,8 +200,8 @@
 /* Display Options Grid */
 .display-options-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
   margin-top: 4px;
 }
 
@@ -210,11 +210,11 @@
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid #27272a;
   border-radius: 8px;
-  padding: 14px 16px;
+  padding: 12px 12px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
   text-align: left;
@@ -289,6 +289,39 @@
 }
 
 .display-option-card.active .preview-card-shard.center {
+  background: #ffffff;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.35);
+}
+
+/* Cardflow Preview Graphic */
+.preview-card-cardflow {
+  height: 34px;
+  width: 22px;
+  background: #3f3f46;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  transform-origin: center center;
+}
+
+.preview-card-cardflow.left {
+  transform: rotate(-12deg) translateY(2px);
+  opacity: 0.5;
+  margin-right: -4px;
+}
+
+.preview-card-cardflow.center {
+  background: #a1a1aa;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.preview-card-cardflow.right {
+  transform: rotate(12deg) translateY(2px);
+  opacity: 0.5;
+  margin-left: -4px;
+}
+
+.display-option-card.active .preview-card-cardflow.center {
   background: #ffffff;
   box-shadow: 0 0 12px rgba(255, 255, 255, 0.35);
 }
