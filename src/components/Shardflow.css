@@ -295,7 +295,7 @@
 
 .shard-toast {
   position: absolute;
-  top: max(16px, calc(50vh - 210px - 88px));
+  top: max(16px, calc(50vh - 210px - 92px));
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;

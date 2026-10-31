@@ -1,6 +1,7 @@
+/* Standard Mode */
 .color-filter-container {
   position: absolute;
-  top: max(16px, calc(50vh - 210px - 46px));
+  top: max(16px, calc(50vh - 210px - 48px));
   left: 50%;
   transform: translateX(-50%);
   z-index: 50;
@@ -29,7 +30,90 @@
 }
 
 .color-filter-bar:hover {
-  border-color: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+/* Arched Mode (Cardflow) */
+.color-filter-container.is-arched {
+  position: absolute;
+  top: max(16px, calc(50vh - 210px - 82px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.color-filter-bar.is-arched {
+  position: relative;
+  width: 460px;
+  height: 90px;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  display: block;
+  pointer-events: auto;
+}
+
+.color-filter-arc-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 460px;
+  height: 90px;
+  background: rgba(14, 14, 18, 0.42);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 460 90'%3E%3Cpath d='M 35 64 Q 230 14 425 64' fill='none' stroke='white' stroke-width='38' stroke-linecap='round'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 460 90'%3E%3Cpath d='M 35 64 Q 230 14 425 64' fill='none' stroke='white' stroke-width='38' stroke-linecap='round'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+.color-filter-arc-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.color-filter-bar.is-arched .color-swatch-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  z-index: 2;
+  transition: opacity 0.18s ease;
+}
+
+.color-swatch-circle.color-swatch-rainbow {
+  background: conic-gradient(
+    #ef4444,
+    #f97316,
+    #eab308,
+    #22c55e,
+    #06b6d4,
+    #3b82f6,
+    #a855f7,
+    #ec4899,
+    #ef4444
+  );
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.3);
 }
 
 .color-filter-btn {
@@ -43,7 +127,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.18s ease;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.18s ease;
   position: relative;
 }
 
@@ -58,13 +142,12 @@
   letter-spacing: 0.02em;
   border-radius: 9999px;
   background: transparent;
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: color 0.18s ease, background 0.18s ease;
 }
 
 .color-filter-all-btn:hover {
   color: #ffffff;
   background: rgba(255, 255, 255, 0.1);
-  transform: scale(1.04);
 }
 
 .color-filter-all-btn.is-active {
@@ -101,6 +184,7 @@
   background: rgba(255, 255, 255, 0.12);
   margin: 0 3px;
   flex-shrink: 0;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .color-swatches-group {
@@ -128,94 +212,4 @@
 
 .color-swatch-btn.is-active .color-swatch-circle {
   transform: scale(1.22);
-}
-
-/* Arched Layout Mode (Cardflow) */
-.color-filter-container.is-arched {
-  position: absolute;
-  top: max(16px, calc(50vh - 205px - 44px));
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 50;
-  pointer-events: none;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.color-filter-bar.is-arched {
-  position: relative;
-  background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-  padding: 0;
-  width: 0;
-  height: 0;
-  pointer-events: auto;
-}
-
-.color-filter-bar.is-arched .color-swatch-btn {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 28px;
-  height: 28px;
-  margin-top: -14px;
-  margin-left: -14px;
-  border-radius: 50%;
-  background: rgba(14, 14, 18, 0.45);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow:
-    0 4px 14px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  outline: none;
-  padding: 0;
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    box-shadow 0.18s ease;
-}
-
-.color-filter-bar.is-arched .color-swatch-btn:hover {
-  background: rgba(26, 26, 34, 0.7);
-  border-color: rgba(255, 255, 255, 0.35);
-  box-shadow:
-    0 6px 20px rgba(0, 0, 0, 0.6),
-    0 0 12px rgba(255, 255, 255, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  z-index: 10;
-}
-
-.color-filter-bar.is-arched .color-swatch-btn.is-active {
-  background: rgba(30, 30, 42, 0.85);
-  border-color: rgba(255, 255, 255, 0.5);
-  box-shadow:
-    0 6px 20px rgba(0, 0, 0, 0.65),
-    0 0 14px rgba(255, 255, 255, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
-  z-index: 10;
-}
-
-.color-swatch-circle.color-swatch-rainbow {
-  background: conic-gradient(
-    #ef4444,
-    #f97316,
-    #eab308,
-    #22c55e,
-    #06b6d4,
-    #3b82f6,
-    #a855f7,
-    #ec4899,
-    #ef4444
-  );
-  box-shadow: 0 0 4px rgba(255, 255, 255, 0.3);
 }

@@ -16,7 +16,7 @@ interface FilterItem {
 }
 
 const ALL_FILTER_ITEMS: FilterItem[] = [
-  { id: null, name: 'All', isAll: true },
+  { id: null, name: 'All Wallpapers', isAll: true },
   ...COLOR_OPTIONS.map((opt) => ({ id: opt.id, name: opt.name, hex: opt.hex, isAll: false })),
 ];
 
@@ -46,11 +46,46 @@ export default function ColorFilterBar({
           aria-label="Filter wallpapers by color"
           onClick={(e) => e.stopPropagation()}
         >
+          {/* Frosted Glass Masked Backdrop */}
+          <div className="color-filter-arc-backdrop" aria-hidden="true" />
+
+          {/* SVG Curved Pill Track */}
+          <svg className="color-filter-arc-track" viewBox="0 0 460 90" aria-hidden="true">
+            {/* Outer Drop Shadow */}
+            <path
+              d="M 35 64 Q 230 14 425 64"
+              fill="none"
+              stroke="rgba(0, 0, 0, 0.45)"
+              strokeWidth="42"
+              strokeLinecap="round"
+            />
+            {/* Dark Glass Fill */}
+            <path
+              d="M 35 64 Q 230 14 425 64"
+              fill="none"
+              stroke="rgba(14, 14, 18, 0.52)"
+              strokeWidth="38"
+              strokeLinecap="round"
+            />
+            {/* Subtle Glass Highlight Edge */}
+            <path
+              d="M 35 64 Q 230 14 425 64"
+              fill="none"
+              stroke="rgba(255, 255, 255, 0.12)"
+              strokeWidth="38"
+              strokeLinecap="round"
+            />
+          </svg>
+
+          {/* Swatches positioned along the Bezier curve */}
           {ALL_FILTER_ITEMS.map((item, i) => {
-            const d = i - 6;
-            const x = d * 28;
-            const y = d * d * 1.6;
-            const rot = d * 3.2;
+            const t = i / 12; // 0.0 to 1.0
+            const x = (1 - t) * (1 - t) * 35 + 2 * (1 - t) * t * 230 + t * t * 425;
+            const y = (1 - t) * (1 - t) * 64 + 2 * (1 - t) * t * 14 + t * t * 64;
+            const dx = 390;
+            const dy = 200 * (t - 0.5);
+            const rot = Math.atan2(dy, dx) * (180 / Math.PI) * 1.35;
+
             const isSelected = item.isAll
               ? isAllActive
               : selectedColor?.toLowerCase() === item.id;
@@ -59,7 +94,7 @@ export default function ColorFilterBar({
               <button
                 key={item.id ?? 'all'}
                 type="button"
-                className={`color-filter-btn color-swatch-btn ${item.isAll ? 'color-swatch-all-curved' : ''} ${isSelected ? 'is-active' : ''}`}
+                className={`color-filter-btn color-swatch-btn ${item.isAll ? 'color-swatch-all-btn' : ''} ${isSelected ? 'is-active' : ''}`}
                 onClick={() => {
                   if (item.isAll) {
                     onSelectColor(null);
@@ -71,7 +106,10 @@ export default function ColorFilterBar({
                 aria-label={item.isAll ? 'All wallpapers' : `Filter by ${item.name}`}
                 aria-pressed={isSelected}
                 style={{
-                  transform: `translate3d(${x}px, ${y}px, 0) rotate(${rot}deg)`,
+                  position: 'absolute',
+                  left: `${x.toFixed(1)}px`,
+                  top: `${y.toFixed(1)}px`,
+                  transform: `translate(-50%, -50%) rotate(${rot.toFixed(1)}deg)`,
                 }}
               >
                 {item.isAll ? (
@@ -106,6 +144,7 @@ export default function ColorFilterBar({
     );
   }
 
+  // Standard Straight Pill Bar for Carousel & Shardflow
   return (
     <div className="color-filter-container">
       <nav

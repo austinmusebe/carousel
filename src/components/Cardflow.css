@@ -368,7 +368,7 @@
 /* Refresh Notification Toast */
 .card-toast {
   position: absolute;
-  top: max(16px, calc(50vh - 205px - 88px));
+  top: max(16px, calc(50vh - 210px - 120px));
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
