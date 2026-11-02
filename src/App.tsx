@@ -8,6 +8,7 @@ import Coverflow from './components/Coverflow';
 import Shardflow from './components/Shardflow';
 import Cardflow from './components/Cardflow';
 import Styleflow from './components/Styleflow';
+import Vinylflow from './components/Vinylflow';
 import { useWallpapers } from './hooks/useWallpapers';
 import { useKeyboardActions } from './hooks/useKeyboardActions';
 import {
@@ -30,6 +31,8 @@ import type {
   GeometricTile,
   GeometricCurve,
   WallLayout,
+  PlayerSkin,
+  VinylSpeed,
 } from './types';
 import './App.css';
 
@@ -44,6 +47,10 @@ export default function App() {
   const [geometricTile, setGeometricTile] = useState<GeometricTile>('hexagon');
   const [geometricCurve, setGeometricCurve] = useState<GeometricCurve>('flat');
   const [wallLayout, setWallLayout] = useState<WallLayout>('uniform');
+  const [vinylSkin, setVinylSkin] = useState<PlayerSkin>('wood');
+  const [vinylRotation, setVinylRotation] = useState<boolean>(true);
+  const [vinylSpeed, setVinylSpeed] = useState<VinylSpeed>('33');
+  const [vinylArmTracking, setVinylArmTracking] = useState<boolean>(true);
   const [blurBackground, setBlurBackground] = useState<boolean>(false);
   const [blurMode, setBlurMode] = useState<BlurMode>('fullscreen');
   const [blurSource, setBlurSource] = useState<BlurSource>('wallpaper');
@@ -127,6 +134,10 @@ export default function App() {
         setHasDirectory(valid);
         currentDirRef.current = wallpaperSourceKey(config);
         applyStyleConfig(config);
+        if (config.vinyl_skin) setVinylSkin(config.vinyl_skin);
+        if (typeof config.vinyl_rotation === 'boolean') setVinylRotation(config.vinyl_rotation);
+        if (config.vinyl_speed) setVinylSpeed(config.vinyl_speed);
+        if (typeof config.vinyl_arm_tracking === 'boolean') setVinylArmTracking(config.vinyl_arm_tracking);
         if (typeof config.blur_background === 'boolean') {
           setBlurBackground(config.blur_background);
         }
@@ -174,6 +185,10 @@ export default function App() {
             setLastWallpaper(config.last_wallpaper);
           }
           applyStyleConfig(config, isShow);
+          if (config.vinyl_skin) setVinylSkin(config.vinyl_skin);
+          if (typeof config.vinyl_rotation === 'boolean') setVinylRotation(config.vinyl_rotation);
+          if (config.vinyl_speed) setVinylSpeed(config.vinyl_speed);
+          if (typeof config.vinyl_arm_tracking === 'boolean') setVinylArmTracking(config.vinyl_arm_tracking);
           if (typeof config.blur_background === 'boolean') {
             setBlurBackground(config.blur_background);
           }
@@ -310,7 +325,24 @@ export default function App() {
       {showAutostartPrompt && (
         <AutostartPromptModal onDone={() => setShowAutostartPrompt(false)} />
       )}
-      {isStyleflowMode(displayMode) ? (
+      {displayMode === 'vinyl' ? (
+        <Vinylflow
+          images={filteredImages}
+          onSetWallpaper={handleSetWallpaper}
+          onRefresh={handleRefresh}
+          blurBackground={blurBackground}
+          blurMode={blurMode}
+          blurSource={blurSource}
+          backdropImage={backdropImage}
+          lastWallpaper={lastWallpaper}
+          selectedColor={selectedColor}
+          onSelectColor={setSelectedColor}
+          skin={vinylSkin}
+          rotation={vinylRotation}
+          speed={vinylSpeed}
+          armTracking={vinylArmTracking}
+        />
+      ) : isStyleflowMode(displayMode) ? (
         <Styleflow
           mode={displayMode}
           geometricTile={geometricTile}

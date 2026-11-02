@@ -18,7 +18,7 @@ export const STYLEFLOW_MODES: StyleflowMode[] = [
   'duel',
 ];
 
-const ROLLABLE_MODES: RollableMode[] = ['carousel', 'shard', 'card', ...STYLEFLOW_MODES];
+const ROLLABLE_MODES: RollableMode[] = ['carousel', 'shard', 'card', 'vinyl', ...STYLEFLOW_MODES];
 const DISPLAY_MODES: DisplayMode[] = [...ROLLABLE_MODES, 'random'];
 const TILES: GeometricTile[] = ['hexagon', 'triangle', 'diamond', 'rhombus'];
 const CURVES: GeometricCurve[] = ['flat', 'arc', 'wave', 's', 'cylinder'];

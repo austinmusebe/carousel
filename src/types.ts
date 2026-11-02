@@ -24,13 +24,15 @@ export type StyleflowMode =
   | 'hand'
   | 'collection'
   | 'duel';
-export type RollableMode = 'carousel' | 'shard' | 'card' | StyleflowMode;
+export type RollableMode = 'carousel' | 'shard' | 'card' | 'vinyl' | StyleflowMode;
 export type DisplayMode = RollableMode | 'random';
 export type GeometricTile = 'hexagon' | 'triangle' | 'diamond' | 'rhombus';
 export type GeometricCurve = 'flat' | 'arc' | 'wave' | 's' | 'cylinder';
 export type WallLayout = 'uniform' | 'brick' | 'masonry' | 'justified' | 'editorial' | 'cylinder';
 export type BlurMode = 'fullscreen' | 'window';
 export type BlurSource = 'screen' | 'wallpaper';
+export type PlayerSkin = 'wood' | 'modern-black';
+export type VinylSpeed = '33' | '45';
 
 export interface AppConfig {
   shortcut: string;
@@ -47,5 +49,9 @@ export interface AppConfig {
   last_wallpaper?: string | null;
   wallpaper_engine_enabled?: boolean;
   wallpaper_engine_directory?: string;
+  vinyl_rotation?: boolean;
+  vinyl_skin?: PlayerSkin;
+  vinyl_speed?: VinylSpeed;
+  vinyl_arm_tracking?: boolean;
 }
 
