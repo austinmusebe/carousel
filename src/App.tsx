@@ -7,11 +7,12 @@ import AutostartPromptModal from './components/AutostartPromptModal';
 import Coverflow from './components/Coverflow';
 import Shardflow from './components/Shardflow';
 import Cardflow from './components/Cardflow';
+import Vinylflow from './components/Vinylflow';
 import { useWallpapers } from './hooks/useWallpapers';
 import { useKeyboardActions } from './hooks/useKeyboardActions';
 import { getConfig, setWallpaper, logFrontend, getBackdrop } from './lib/tauri';
 import { filterAndSortWallpapers } from './lib/colorFilter';
-import type { WallpaperEntry, DisplayMode, BlurMode, BlurSource } from './types';
+import type { WallpaperEntry, DisplayMode, BlurMode, BlurSource, PlayerSkin, VinylSpeed } from './types';
 import './App.css';
 
 export default function App() {
@@ -25,6 +26,10 @@ export default function App() {
   const [blurBackground, setBlurBackground] = useState<boolean>(false);
   const [blurMode, setBlurMode] = useState<BlurMode>('fullscreen');
   const [blurSource, setBlurSource] = useState<BlurSource>('wallpaper');
+  const [vinylSkin, setVinylSkin] = useState<PlayerSkin>('wood');
+  const [vinylRotation, setVinylRotation] = useState<boolean>(true);
+  const [vinylSpeed, setVinylSpeed] = useState<VinylSpeed>('33');
+  const [vinylArmTracking, setVinylArmTracking] = useState<boolean>(true);
   const [backdropImage, setBackdropImage] = useState<string | null>(null);
   const [lastWallpaper, setLastWallpaper] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
@@ -76,12 +81,26 @@ export default function App() {
           config.wallpaper_directory !== null;
         setHasDirectory(valid);
         currentDirRef.current = config.wallpaper_directory;
-        if (config.display_mode === 'card') {
+        if (config.display_mode === 'vinyl') {
+          setDisplayMode('vinyl');
+        } else if (config.display_mode === 'card') {
           setDisplayMode('card');
         } else if (config.display_mode === 'carousel') {
           setDisplayMode('carousel');
         } else {
           setDisplayMode('shard');
+        }
+        if (config.vinyl_skin) {
+          setVinylSkin(config.vinyl_skin);
+        }
+        if (typeof config.vinyl_rotation === 'boolean') {
+          setVinylRotation(config.vinyl_rotation);
+        }
+        if (config.vinyl_speed) {
+          setVinylSpeed(config.vinyl_speed);
+        }
+        if (typeof config.vinyl_arm_tracking === 'boolean') {
+          setVinylArmTracking(config.vinyl_arm_tracking);
         }
         if (typeof config.blur_background === 'boolean') {
           setBlurBackground(config.blur_background);
@@ -130,13 +149,27 @@ export default function App() {
             setLastWallpaper(config.last_wallpaper);
           }
           if (config.display_mode) {
-            if (config.display_mode === 'card') {
+            if (config.display_mode === 'vinyl') {
+              setDisplayMode('vinyl');
+            } else if (config.display_mode === 'card') {
               setDisplayMode('card');
             } else if (config.display_mode === 'carousel') {
               setDisplayMode('carousel');
             } else {
               setDisplayMode('shard');
             }
+          }
+          if (config.vinyl_skin) {
+            setVinylSkin(config.vinyl_skin);
+          }
+          if (typeof config.vinyl_rotation === 'boolean') {
+            setVinylRotation(config.vinyl_rotation);
+          }
+          if (config.vinyl_speed) {
+            setVinylSpeed(config.vinyl_speed);
+          }
+          if (typeof config.vinyl_arm_tracking === 'boolean') {
+            setVinylArmTracking(config.vinyl_arm_tracking);
           }
           if (typeof config.blur_background === 'boolean') {
             setBlurBackground(config.blur_background);
@@ -259,7 +292,24 @@ export default function App() {
       {showAutostartPrompt && (
         <AutostartPromptModal onDone={() => setShowAutostartPrompt(false)} />
       )}
-      {displayMode === 'card' ? (
+      {displayMode === 'vinyl' ? (
+        <Vinylflow
+          images={filteredImages}
+          onSetWallpaper={handleSetWallpaper}
+          onRefresh={handleRefresh}
+          blurBackground={blurBackground}
+          blurMode={blurMode}
+          blurSource={blurSource}
+          backdropImage={backdropImage}
+          lastWallpaper={lastWallpaper}
+          selectedColor={selectedColor}
+          onSelectColor={setSelectedColor}
+          skin={vinylSkin}
+          rotation={vinylRotation}
+          speed={vinylSpeed}
+          armTracking={vinylArmTracking}
+        />
+      ) : displayMode === 'card' ? (
         <Cardflow
           images={filteredImages}
           onSetWallpaper={handleSetWallpaper}

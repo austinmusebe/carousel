@@ -8,7 +8,7 @@ import {
   quitApp,
   logFrontend,
 } from '../lib/tauri';
-import type { DisplayMode, BlurMode, BlurSource } from '../types';
+import type { DisplayMode, BlurMode, BlurSource, PlayerSkin, VinylSpeed } from '../types';
 import './SettingsScreen.css';
 
 const SHORTCUT_PRESETS = [
@@ -23,6 +23,10 @@ export default function SettingsScreen() {
   const [shortcut, setShortcut] = useState('Alt+W');
   const [autostart, setAutostart] = useState(false);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('shard');
+  const [vinylSkin, setVinylSkin] = useState<PlayerSkin>('wood');
+  const [vinylRotation, setVinylRotation] = useState<boolean>(true);
+  const [vinylSpeed, setVinylSpeed] = useState<VinylSpeed>('33');
+  const [vinylArmTracking, setVinylArmTracking] = useState<boolean>(true);
   const [blurBackground, setBlurBackground] = useState(false);
   const [blurMode, setBlurMode] = useState<BlurMode>('fullscreen');
   const [blurSource, setBlurSource] = useState<BlurSource>('wallpaper');
@@ -37,6 +41,10 @@ export default function SettingsScreen() {
         setDirectory(cfg.wallpaper_directory || '');
         setShortcut(cfg.shortcut || 'Alt+W');
         setDisplayMode(cfg.display_mode || 'shard');
+        if (cfg.vinyl_skin) setVinylSkin(cfg.vinyl_skin);
+        if (typeof cfg.vinyl_rotation === 'boolean') setVinylRotation(cfg.vinyl_rotation);
+        if (cfg.vinyl_speed) setVinylSpeed(cfg.vinyl_speed);
+        if (typeof cfg.vinyl_arm_tracking === 'boolean') setVinylArmTracking(cfg.vinyl_arm_tracking);
         setBlurBackground(cfg.blur_background ?? false);
         setBlurMode(cfg.blur_mode || 'fullscreen');
         setBlurSource(cfg.blur_source || 'wallpaper');
@@ -83,7 +91,11 @@ export default function SettingsScreen() {
         displayMode,
         blurBackground,
         blurMode,
-        blurSource
+        blurSource,
+        vinylSkin,
+        vinylRotation,
+        vinylSpeed,
+        vinylArmTracking
       );
       setStatusMessage('Settings saved successfully');
       setIsError(false);
@@ -258,8 +270,151 @@ export default function SettingsScreen() {
                 </p>
               </div>
             </button>
+
+            <button
+              type="button"
+              className={`display-option-card ${displayMode === 'vinyl' ? 'active' : ''}`}
+              onClick={() => setDisplayMode('vinyl')}
+            >
+              <div className="display-option-preview">
+                <div className="preview-card-vinyl left" />
+                <div className="preview-card-vinyl center" />
+                <div className="preview-card-vinyl right" />
+              </div>
+              <div className="display-option-info">
+                <div className="display-option-header">
+                  <span className="display-option-title">Vinyl-flow</span>
+                  <span className="display-option-badge">Turntable</span>
+                </div>
+                <p className="display-option-desc">
+                  Analog turntable player with rotating vinyl and sleeve covers.
+                </p>
+              </div>
+            </button>
           </div>
         </section>
+
+        {/* Section: Turntable Preferences (when Vinyl is active) */}
+        {displayMode === 'vinyl' && (
+          <section className="settings-section">
+            <div className="section-meta">
+              <label className="section-label">Turntable Preferences</label>
+              <p className="section-hint">Customize player appearance, rotation, and playback speed.</p>
+            </div>
+
+            <div className="settings-subsection-header">
+              <span className="settings-subsection-title">Player Skin</span>
+            </div>
+            <div className="display-options-grid skin-options-grid">
+              <button
+                type="button"
+                className={`display-option-card ${vinylSkin === 'wood' ? 'active' : ''}`}
+                onClick={() => setVinylSkin('wood')}
+              >
+                <div className="display-option-info">
+                  <div className="display-option-header">
+                    <span className="display-option-title">Walnut Wood</span>
+                    <span className="display-option-badge">Brass</span>
+                  </div>
+                  <p className="display-option-desc">
+                    Warm mid-tone walnut plinth with polished brass platter rim.
+                  </p>
+                </div>
+              </button>
+              <button
+                type="button"
+                className={`display-option-card ${vinylSkin === 'modern-black' ? 'active' : ''}`}
+                onClick={() => setVinylSkin('modern-black')}
+              >
+                <div className="display-option-info">
+                  <div className="display-option-header">
+                    <span className="display-option-title">Modern Black</span>
+                    <span className="display-option-badge">Aluminum</span>
+                  </div>
+                  <p className="display-option-desc">
+                    Matte obsidian plinth with machined silver aluminum platter rim.
+                  </p>
+                </div>
+              </button>
+            </div>
+
+            <div className="settings-subsection-header" style={{ marginTop: '16px' }}>
+              <span className="settings-subsection-title">Platter Rotation</span>
+            </div>
+            <label className="switch-row">
+              <div className="switch-wrapper">
+                <input
+                  type="checkbox"
+                  className="switch-input"
+                  checked={vinylRotation}
+                  onChange={(e) => setVinylRotation(e.target.checked)}
+                />
+                <span className="switch-track" />
+              </div>
+              <span className="switch-label-text">
+                {vinylRotation ? 'Record rotation enabled' : 'Record rotation paused (static)'}
+              </span>
+            </label>
+
+            {vinylRotation && (
+              <>
+                <div className="settings-subsection-header" style={{ marginTop: '16px' }}>
+                  <span className="settings-subsection-title">Rotation Speed</span>
+                </div>
+                <div className="display-options-grid speed-options-grid">
+                  <button
+                    type="button"
+                    className={`display-option-card ${vinylSpeed === '33' ? 'active' : ''}`}
+                    onClick={() => setVinylSpeed('33')}
+                  >
+                    <div className="display-option-info">
+                      <div className="display-option-header">
+                        <span className="display-option-title">33⅓ RPM</span>
+                        <span className="display-option-badge">Standard</span>
+                      </div>
+                      <p className="display-option-desc">
+                        Classic 1.8 seconds per revolution LP speed.
+                      </p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    className={`display-option-card ${vinylSpeed === '45' ? 'active' : ''}`}
+                    onClick={() => setVinylSpeed('45')}
+                  >
+                    <div className="display-option-info">
+                      <div className="display-option-header">
+                        <span className="display-option-title">45 RPM</span>
+                        <span className="display-option-badge">Fast</span>
+                      </div>
+                      <p className="display-option-desc">
+                        Brisk 1.33 seconds per revolution single speed.
+                      </p>
+                    </div>
+                  </button>
+                </div>
+              </>
+            )}
+
+            <div className="settings-subsection-header" style={{ marginTop: '16px' }}>
+              <span className="settings-subsection-title">Tonearm Track Progress</span>
+            </div>
+            <label className="switch-row">
+              <div className="switch-wrapper">
+                <input
+                  type="checkbox"
+                  className="switch-input"
+                  checked={vinylArmTracking}
+                  onChange={(e) => setVinylArmTracking(e.target.checked)}
+                />
+                <span className="switch-track" />
+              </div>
+              <span className="switch-label-text">
+                {vinylArmTracking ? 'Tonearm position reflects collection index' : 'Fixed tonearm rest angle'}
+              </span>
+            </label>
+          </section>
+        )}
 
         {/* Section: Background Blur */}
         <section className="settings-section">

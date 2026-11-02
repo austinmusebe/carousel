@@ -105,6 +105,7 @@ fn toggle_main_window_internal(app: &tauri::AppHandle) {
                 app_error!("[Toggle] Failed window.hide(): {}", e);
             } else {
                 app_info!("[Toggle] window.hide() called successfully");
+                let _ = window.emit("window-hidden", ());
             }
         } else {
             app_info!("[Toggle] Main window is currently hidden -> showing");
@@ -339,6 +340,10 @@ fn save_settings(
     blur_background: bool,
     blur_mode: String,
     blur_source: Option<String>,
+    vinyl_skin: Option<String>,
+    vinyl_rotation: Option<bool>,
+    vinyl_speed: Option<String>,
+    vinyl_arm_tracking: Option<bool>,
 ) -> Result<(), String> {
     use tauri_plugin_autostart::ManagerExt;
     if autostart {
@@ -359,6 +364,7 @@ fn save_settings(
     config.display_mode = match display_mode.as_str() {
         "shard" => "shard".to_string(),
         "card" => "card".to_string(),
+        "vinyl" => "vinyl".to_string(),
         _ => "carousel".to_string(),
     };
     config.blur_background = blur_background;
@@ -372,6 +378,18 @@ fn save_settings(
     } else {
         "wallpaper".to_string()
     };
+    if let Some(skin) = vinyl_skin {
+        config.vinyl_skin = skin;
+    }
+    if let Some(rot) = vinyl_rotation {
+        config.vinyl_rotation = rot;
+    }
+    if let Some(spd) = vinyl_speed {
+        config.vinyl_speed = spd;
+    }
+    if let Some(track) = vinyl_arm_tracking {
+        config.vinyl_arm_tracking = track;
+    }
     config.save(&app);
 
     if let Some(window) = app.get_webview_window("main") {
@@ -666,6 +684,7 @@ pub fn run() {
                         if !prevent {
                             if elapsed > std::time::Duration::from_millis(400) {
                                 app_info!("[WindowEvent] 'main' lost focus after grace period ({:.1}ms) -> HIDING window", elapsed.as_secs_f64() * 1000.0);
+                                let _ = window.emit("window-hidden", ());
                                 let _ = window.hide();
                             } else {
                                 app_info!("[WindowEvent] 'main' lost focus within grace period ({:.1}ms <= 400ms) -> scheduling delayed check", elapsed.as_secs_f64() * 1000.0);
@@ -677,6 +696,7 @@ pub fn run() {
                                         let is_focused = window_clone.is_focused().unwrap_or(false);
                                         if !is_focused && !prevent {
                                             app_info!("[WindowEvent] 'main' delayed grace check: still unfocused -> HIDING window");
+                                            let _ = window_clone.emit("window-hidden", ());
                                             let _ = window_clone.hide();
                                         }
                                     }

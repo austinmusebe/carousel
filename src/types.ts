@@ -14,9 +14,11 @@ export interface WallpaperEntry {
   colors?: ColorScore[];
 }
 
-export type DisplayMode = 'carousel' | 'shard' | 'card';
+export type DisplayMode = 'carousel' | 'shard' | 'card' | 'vinyl';
 export type BlurMode = 'fullscreen' | 'window';
 export type BlurSource = 'screen' | 'wallpaper';
+export type PlayerSkin = 'wood' | 'modern-black';
+export type VinylSpeed = '33' | '45';
 
 export interface AppConfig {
   shortcut: string;
@@ -28,5 +30,9 @@ export interface AppConfig {
   blur_mode?: BlurMode;
   blur_source?: BlurSource;
   last_wallpaper?: string | null;
+  vinyl_rotation?: boolean;
+  vinyl_skin?: PlayerSkin;
+  vinyl_speed?: VinylSpeed;
+  vinyl_arm_tracking?: boolean;
 }
 

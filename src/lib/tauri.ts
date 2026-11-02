@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { convertFileSrc } from '@tauri-apps/api/core';
-import type { WallpaperEntry, AppConfig } from '../types';
+import type { WallpaperEntry, AppConfig, PlayerSkin, VinylSpeed } from '../types';
 
 export { convertFileSrc };
 
@@ -37,7 +37,11 @@ export async function saveSettings(
   displayMode: string = 'shard',
   blurBackground: boolean = false,
   blurMode: string = 'fullscreen',
-  blurSource: string = 'wallpaper'
+  blurSource: string = 'wallpaper',
+  vinylSkin?: PlayerSkin,
+  vinylRotation?: boolean,
+  vinylSpeed?: VinylSpeed,
+  vinylArmTracking?: boolean
 ): Promise<void> {
   return invoke('save_settings', {
     shortcut,
@@ -47,6 +51,10 @@ export async function saveSettings(
     blurBackground,
     blurMode,
     blurSource,
+    vinylSkin,
+    vinylRotation,
+    vinylSpeed,
+    vinylArmTracking,
   });
 }
 

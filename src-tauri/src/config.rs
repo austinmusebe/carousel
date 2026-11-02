@@ -16,6 +16,22 @@ fn default_blur_source() -> String {
     "wallpaper".to_string()
 }
 
+fn default_vinyl_rotation() -> bool {
+    true
+}
+
+fn default_vinyl_skin() -> String {
+    "wood".to_string()
+}
+
+fn default_vinyl_speed() -> String {
+    "33".to_string()
+}
+
+fn default_vinyl_arm_tracking() -> bool {
+    true
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {
     pub shortcut: String,
@@ -34,6 +50,14 @@ pub struct AppConfig {
     pub blur_source: String,
     #[serde(default)]
     pub last_wallpaper: Option<String>,
+    #[serde(default = "default_vinyl_rotation")]
+    pub vinyl_rotation: bool,
+    #[serde(default = "default_vinyl_skin")]
+    pub vinyl_skin: String,
+    #[serde(default = "default_vinyl_speed")]
+    pub vinyl_speed: String,
+    #[serde(default = "default_vinyl_arm_tracking")]
+    pub vinyl_arm_tracking: bool,
 }
 
 impl Default for AppConfig {
@@ -48,6 +72,10 @@ impl Default for AppConfig {
             blur_mode: default_blur_mode(),
             blur_source: default_blur_source(),
             last_wallpaper: None,
+            vinyl_rotation: default_vinyl_rotation(),
+            vinyl_skin: default_vinyl_skin(),
+            vinyl_speed: default_vinyl_speed(),
+            vinyl_arm_tracking: default_vinyl_arm_tracking(),
         }
     }
 }
