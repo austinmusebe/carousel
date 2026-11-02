@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import {
   setWallpaperDirectory,
+  enableWallpaperEngine,
   setAutostart,
   setPreventHide,
 } from "../lib/tauri";
@@ -33,6 +34,21 @@ export default function SetupScreen({ onDirectorySet }: SetupScreenProps) {
       } else {
         await setPreventHide(false);
       }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      await setPreventHide(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUseWallpaperEngine = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await setPreventHide(true);
+      await enableWallpaperEngine();
+      setStep("autostart");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       await setPreventHide(false);
@@ -109,16 +125,26 @@ export default function SetupScreen({ onDirectorySet }: SetupScreenProps) {
         <div className="setup-icon">🖼️</div>
         <h1 className="setup-title">carousel</h1>
         <p className="setup-description">
-          Select a folder containing your wallpaper images to get started.
+          Select a folder containing your wallpaper images, or use your
+          Wallpaper Engine library, to get started.
         </p>
-        <button
-          className="setup-button setup-button-primary"
-          onClick={handleSelectFolder}
-          disabled={loading}
-          autoFocus
-        >
-          {loading ? "Setting up..." : "Choose Wallpaper Folder"}
-        </button>
+        <div className="setup-actions">
+          <button
+            className="setup-button setup-button-primary"
+            onClick={handleSelectFolder}
+            disabled={loading}
+            autoFocus
+          >
+            {loading ? "Setting up..." : "Choose Wallpaper Folder"}
+          </button>
+          <button
+            className="setup-button setup-button-secondary"
+            onClick={handleUseWallpaperEngine}
+            disabled={loading}
+          >
+            Use Wallpaper Engine
+          </button>
+        </div>
         {error && <p className="setup-error">{error}</p>}
         <div className="setup-tip-box">
           <span className="setup-tip-badge">Tip</span>

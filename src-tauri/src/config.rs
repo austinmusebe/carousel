@@ -8,6 +8,48 @@ fn default_display_mode() -> String {
     "shard".to_string()
 }
 
+pub const DISPLAY_MODES: &[&str] = &[
+    "carousel",
+    "shard",
+    "card",
+    "depth",
+    "geometric",
+    "wall",
+    "sandy",
+    "hand",
+    "collection",
+    "duel",
+    "random",
+];
+pub const GEOMETRIC_TILES: &[&str] = &["hexagon", "triangle", "diamond", "rhombus"];
+pub const GEOMETRIC_CURVES: &[&str] = &["flat", "arc", "wave", "s", "cylinder"];
+pub const WALL_LAYOUTS: &[&str] = &[
+    "uniform",
+    "brick",
+    "masonry",
+    "justified",
+    "editorial",
+    "cylinder",
+];
+
+/// Returns `value` when it is one of `allowed`, otherwise the first allowed value.
+pub fn pick_option(value: &str, allowed: &[&str]) -> String {
+    let picked = allowed.iter().find(|option| **option == value);
+    picked.unwrap_or(&allowed[0]).to_string()
+}
+
+fn default_geometric_tile() -> String {
+    GEOMETRIC_TILES[0].to_string()
+}
+
+fn default_geometric_curve() -> String {
+    GEOMETRIC_CURVES[0].to_string()
+}
+
+fn default_wall_layout() -> String {
+    WALL_LAYOUTS[0].to_string()
+}
+
 fn default_blur_mode() -> String {
     "fullscreen".to_string()
 }
@@ -26,6 +68,12 @@ pub struct AppConfig {
     pub autostart_prompted: bool,
     #[serde(default = "default_display_mode")]
     pub display_mode: String,
+    #[serde(default = "default_geometric_tile")]
+    pub geometric_tile: String,
+    #[serde(default = "default_geometric_curve")]
+    pub geometric_curve: String,
+    #[serde(default = "default_wall_layout")]
+    pub wall_layout: String,
     #[serde(default)]
     pub blur_background: bool,
     #[serde(default = "default_blur_mode")]
@@ -34,6 +82,11 @@ pub struct AppConfig {
     pub blur_source: String,
     #[serde(default)]
     pub last_wallpaper: Option<String>,
+    #[serde(default)]
+    pub wallpaper_engine_enabled: bool,
+    /// Wallpaper Engine install folder; empty means auto-detect through Steam
+    #[serde(default)]
+    pub wallpaper_engine_directory: String,
 }
 
 impl Default for AppConfig {
@@ -44,10 +97,15 @@ impl Default for AppConfig {
             autostart: false,
             autostart_prompted: false,
             display_mode: default_display_mode(),
+            geometric_tile: default_geometric_tile(),
+            geometric_curve: default_geometric_curve(),
+            wall_layout: default_wall_layout(),
             blur_background: false,
             blur_mode: default_blur_mode(),
             blur_source: default_blur_source(),
             last_wallpaper: None,
+            wallpaper_engine_enabled: false,
+            wallpaper_engine_directory: String::new(),
         }
     }
 }
@@ -185,6 +243,10 @@ impl AppConfig {
         }
         std::path::Path::new(&self.wallpaper_directory).is_dir()
     }
+
+    pub fn has_valid_source(&self) -> bool {
+        self.wallpaper_engine_enabled || self.has_valid_directory()
+    }
 }
 
 #[cfg(test)]
@@ -244,6 +306,32 @@ mod tests {
         }"#;
         let config: AppConfig = serde_json::from_str(json).expect("should parse");
         assert_eq!(config.display_mode, "card");
+    }
+
+    #[test]
+    fn test_pick_option_keeps_known_values_and_falls_back() {
+        assert_eq!(pick_option("duel", DISPLAY_MODES), "duel");
+        assert_eq!(pick_option("nonsense", DISPLAY_MODES), "carousel");
+        assert_eq!(pick_option("masonry", WALL_LAYOUTS), "masonry");
+        assert_eq!(pick_option("", GEOMETRIC_CURVES), "flat");
+    }
+
+    #[test]
+    fn test_config_without_style_options_gets_defaults() {
+        let json = r#"{"shortcut": "Alt+W", "wallpaper_directory": ""}"#;
+        let config: AppConfig = serde_json::from_str(json).expect("should parse");
+        assert_eq!(config.geometric_tile, "hexagon");
+        assert_eq!(config.geometric_curve, "flat");
+        assert_eq!(config.wall_layout, "uniform");
+    }
+
+    #[test]
+    fn test_wallpaper_engine_alone_is_a_valid_source() {
+        let mut config = AppConfig::default();
+        assert!(!config.has_valid_source());
+        config.wallpaper_engine_enabled = true;
+        assert!(config.has_valid_source());
+        assert!(!config.has_valid_directory());
     }
 
     #[test]
