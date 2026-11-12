@@ -426,7 +426,7 @@
 
 .gallery-toast {
   position: absolute;
-  top: max(16px, calc(50vh - 210px - 92px));
+  top: max(14px, calc(50vh - 220px - 118px));
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
