@@ -449,6 +449,10 @@ export default function Styleflow({
             scaleMod = pose.isActive ? ' scale(1.02)' : ' scale(0.95)';
           } else if (animationStyle === 'fade') {
             scaleMod = pose.isActive ? ' scale(1.01)' : ' scale(0.97)';
+          } else if (animationStyle === 'cube') {
+            zMod = pose.isActive ? 45 : -70;
+            rotY = pose.isActive ? 0 : (pose.rotateY !== 0 ? pose.rotateY * 1.6 : (pose.x > 0 ? -52 : 52));
+            scaleMod = pose.isActive ? ' scale(1.03)' : ' scale(0.92)';
           }
 
           const cardOpacity = animationStyle === 'fade'

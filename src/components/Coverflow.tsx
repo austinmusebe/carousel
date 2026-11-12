@@ -85,6 +85,23 @@ function getSlotTransform(
       opacity,
     };
   }
+  if (animationStyle === 'cube') {
+    if (offset === 0) {
+      return {
+        transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 0) rotateY(0deg)`,
+        opacity: 1,
+      };
+    }
+    const d = Math.abs(offset);
+    const rotY = offset > 0 ? -62 : 62;
+    const z = -Math.min(280, d * 75);
+    const scale = Math.max(0.72, 1 - d * 0.05);
+    const opacity = Math.max(0.3, 1 - d * 0.15);
+    return {
+      transform: `translate3d(calc(-50% + ${xOffset}px), -50%, ${z}px) rotateY(${rotY}deg) scale(${scale.toFixed(3)})`,
+      opacity,
+    };
+  }
   return {
     transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 0)`,
   };

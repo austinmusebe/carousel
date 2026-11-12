@@ -399,6 +399,24 @@
   box-shadow: 0 0 16px rgba(255, 255, 255, 0.45);
 }
 
+.preview-anim-cube {
+  perspective: 150px;
+}
+
+.preview-anim-cube .preview-card-carousel.side:first-child {
+  transform: rotateY(60deg) scale(0.85);
+  opacity: 0.35;
+}
+
+.preview-anim-cube .preview-card-carousel.side:last-child {
+  transform: rotateY(-60deg) scale(0.85);
+  opacity: 0.35;
+}
+
+.preview-anim-cube .preview-card-carousel.center {
+  transform: scale(1.04);
+}
+
 /* Shard Preview Graphic */
 .preview-card-shard {
   height: 32px;

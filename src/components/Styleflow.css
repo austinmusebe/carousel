@@ -88,6 +88,25 @@
   box-shadow: 0 22px 65px rgba(0, 0, 0, 0.75);
 }
 
+/* 3D Cube Rotate Animation for Styleflow */
+.style-stage.anim-cube .style-card {
+  transition:
+    transform 0.34s cubic-bezier(0.25, 1, 0.35, 1),
+    width 0.34s cubic-bezier(0.25, 1, 0.35, 1),
+    height 0.34s cubic-bezier(0.25, 1, 0.35, 1),
+    opacity 0.28s ease,
+    filter 0.28s ease;
+  will-change: transform, filter;
+}
+
+.style-stage.anim-cube .style-card.inactive {
+  filter: brightness(0.65) contrast(1.05);
+}
+
+.style-stage.anim-cube .style-card.active {
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9);
+}
+
 .style-card::after {
   content: "";
   position: absolute;

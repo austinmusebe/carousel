@@ -105,6 +105,12 @@ const ANIMATION_OPTIONS: {
     badge: 'Smooth',
     desc: 'Cinematic ambient crossfade with soft gliding focus on transition.',
   },
+  {
+    value: 'cube',
+    title: '3D Cube Rotate',
+    badge: 'Prism',
+    desc: 'Revolves cards like facets around a deep 3D rotating prism drum.',
+  },
 ];
 
 function ChipRow<T extends string>({

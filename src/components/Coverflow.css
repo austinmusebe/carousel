@@ -159,6 +159,30 @@
   box-shadow: 0 20px 55px rgba(0, 0, 0, 0.75);
 }
 
+/* 3D Cube Rotate Animation Mode */
+.gallery-stage.anim-cube {
+  perspective: 1200px;
+  perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
+}
+
+.gallery-stage.anim-cube .gallery-slot {
+  transition:
+    transform 0.34s cubic-bezier(0.25, 1, 0.35, 1),
+    width 0.34s cubic-bezier(0.25, 1, 0.35, 1),
+    opacity 0.28s ease,
+    filter 0.28s ease;
+  will-change: transform, width, opacity;
+}
+
+.gallery-stage.anim-cube .gallery-slot.inactive {
+  filter: brightness(0.65) contrast(1.05);
+}
+
+.gallery-stage.anim-cube .gallery-slot.active {
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9);
+}
+
 .gallery-slot {
   position: absolute;
   top: 50%;
