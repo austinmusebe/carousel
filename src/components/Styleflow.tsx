@@ -24,6 +24,7 @@ import type {
   GeometricTile,
   GeometricCurve,
   WallLayout,
+  AnimationStyle,
 } from '../types';
 import ColorFilterBar from './ColorFilterBar';
 import './Shardflow.css';
@@ -44,6 +45,7 @@ interface StyleflowProps {
   lastWallpaper?: string | null;
   selectedColor?: string | null;
   onSelectColor?: (color: string | null) => void;
+  animationStyle?: AnimationStyle;
 }
 
 const GRAIN_SIZE = 8; // px
@@ -194,6 +196,7 @@ export default function Styleflow({
   lastWallpaper = null,
   selectedColor = null,
   onSelectColor,
+  animationStyle = 'classic',
 }: StyleflowProps) {
   const findWallpaperIndex = useCallback(
     (targetPath?: string | null) => {
@@ -422,7 +425,7 @@ export default function Styleflow({
         ))}
       {colorBar}
       {toast}
-      <div className="style-stage" onClick={handleBackdropClick}>
+      <div className={`style-stage anim-${animationStyle}`} onClick={handleBackdropClick}>
         {mode === 'sandy' && (
           <SandHero
             entry={activeEntry}
@@ -433,6 +436,9 @@ export default function Styleflow({
         {poses.map((pose) => {
           const entry = images[pose.index];
           const showFull = pose.isActive && mode !== 'sandy';
+          const zMod = animationStyle === 'zoom-depth' ? (pose.isActive ? 40 : -40) : 0;
+          const scaleMod = animationStyle === 'zoom-depth' ? (pose.isActive ? ' scale(1.04)' : ' scale(0.96)') : '';
+
           return (
             <div
               key={pose.key}
@@ -446,8 +452,8 @@ export default function Styleflow({
                 clipPath: pose.clip,
                 pointerEvents: pose.opacity === 0 ? 'none' : undefined,
                 transform:
-                  `translate(-50%, -50%) translate3d(${pose.x}px, ${pose.y}px, ${pose.z}px) ` +
-                  `rotateY(${pose.rotateY}deg) rotate(${pose.rotate}deg) skewX(${pose.skew}deg)`,
+                  `translate(-50%, -50%) translate3d(${pose.x}px, ${pose.y}px, ${pose.z + zMod}px) ` +
+                  `rotateY(${pose.rotateY}deg) rotate(${pose.rotate}deg) skewX(${pose.skew}deg)${scaleMod}`,
                 ['--unskew' as string]: `${-pose.skew}deg`,
               }}
               onClick={() => {

@@ -32,6 +32,19 @@ pub const WALL_LAYOUTS: &[&str] = &[
     "editorial",
     "cylinder",
 ];
+pub const ANIMATION_STYLES: &[&str] = &[
+    "classic",
+    "zoom-depth",
+    "spring",
+    "flip",
+    "fade",
+    "cube",
+    "parallax",
+];
+
+fn default_animation_style() -> String {
+    "classic".to_string()
+}
 
 /// Returns `value` when it is one of `allowed`, otherwise the first allowed value.
 pub fn pick_option(value: &str, allowed: &[&str]) -> String {
@@ -112,6 +125,8 @@ pub struct AppConfig {
     pub vinyl_speed: String,
     #[serde(default = "default_vinyl_arm_tracking")]
     pub vinyl_arm_tracking: bool,
+    #[serde(default = "default_animation_style")]
+    pub animation_style: String,
 
 }
 
@@ -136,6 +151,7 @@ impl Default for AppConfig {
             vinyl_skin: default_vinyl_skin(),
             vinyl_speed: default_vinyl_speed(),
             vinyl_arm_tracking: default_vinyl_arm_tracking(),
+            animation_style: default_animation_style(),
 
         }
     }
@@ -354,6 +370,14 @@ mod tests {
         assert_eq!(config.geometric_tile, "hexagon");
         assert_eq!(config.geometric_curve, "flat");
         assert_eq!(config.wall_layout, "uniform");
+        assert_eq!(config.animation_style, "classic");
+    }
+
+    #[test]
+    fn test_animation_style_parsing() {
+        let json = r#"{"shortcut": "Alt+W", "wallpaper_directory": "", "animation_style": "zoom-depth"}"#;
+        let config: AppConfig = serde_json::from_str(json).expect("should parse");
+        assert_eq!(config.animation_style, "zoom-depth");
     }
 
     #[test]

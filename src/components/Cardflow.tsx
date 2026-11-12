@@ -9,7 +9,7 @@ import {
   pillResolution,
   pillTag,
 } from '../lib/tauri';
-import type { WallpaperEntry, BlurMode, BlurSource } from '../types';
+import type { WallpaperEntry, BlurMode, BlurSource, AnimationStyle } from '../types';
 import ColorFilterBar from './ColorFilterBar';
 import './Cardflow.css';
 
@@ -24,6 +24,7 @@ interface CardflowProps {
   lastWallpaper?: string | null;
   selectedColor?: string | null;
   onSelectColor?: (color: string | null) => void;
+  animationStyle?: AnimationStyle;
 }
 
 const VISIBLE_RADIUS = 4;
@@ -40,6 +41,7 @@ export default function Cardflow({
   lastWallpaper = null,
   selectedColor = null,
   onSelectColor,
+  animationStyle = 'classic',
 }: CardflowProps) {
   const findWallpaperIndex = useCallback(
     (targetPath?: string | null) => {
@@ -427,7 +429,7 @@ export default function Cardflow({
           <span>{refreshNotification}</span>
         </div>
       )}
-      <div className="card-stage" onClick={handleBackdropClick}>
+      <div className={`card-stage anim-${animationStyle}`} onClick={handleBackdropClick}>
         {slots.map((slot) => {
           const fileExt = pillTag(slot.img);
           const isHighResReady = loadedHighResMap[slot.img.path];

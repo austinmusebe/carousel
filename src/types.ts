@@ -33,6 +33,14 @@ export type BlurMode = 'fullscreen' | 'window';
 export type BlurSource = 'screen' | 'wallpaper';
 export type PlayerSkin = 'wood' | 'modern-black';
 export type VinylSpeed = '33' | '45';
+export type AnimationStyle =
+  | 'classic'
+  | 'zoom-depth'
+  | 'spring'
+  | 'flip'
+  | 'fade'
+  | 'cube'
+  | 'parallax';
 
 export interface AppConfig {
   shortcut: string;
@@ -53,5 +61,6 @@ export interface AppConfig {
   vinyl_skin?: PlayerSkin;
   vinyl_speed?: VinylSpeed;
   vinyl_arm_tracking?: boolean;
+  animation_style?: AnimationStyle;
 }
 
