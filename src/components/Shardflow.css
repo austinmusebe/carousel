@@ -141,6 +141,24 @@
   box-shadow: 0 26px 70px rgba(0, 0, 0, 0.85);
 }
 
+/* Crossfade Glide Mode */
+.shard-stage.anim-fade .shard-slot {
+  transition:
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.32s ease;
+  will-change: transform, width, opacity, filter;
+}
+
+.shard-stage.anim-fade .shard-slot.inactive {
+  filter: brightness(0.65) blur(0.4px);
+}
+
+.shard-stage.anim-fade .shard-slot.active {
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.75);
+}
+
 .shard-slot {
   position: absolute;
   top: 50%;

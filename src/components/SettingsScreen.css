@@ -389,6 +389,16 @@
   transform: scale(1.06);
 }
 
+.preview-anim-fade .preview-card-carousel.side {
+  opacity: 0.25;
+  filter: blur(0.5px);
+}
+
+.preview-anim-fade .preview-card-carousel.center {
+  opacity: 1;
+  box-shadow: 0 0 16px rgba(255, 255, 255, 0.45);
+}
+
 /* Shard Preview Graphic */
 .preview-card-shard {
   height: 32px;

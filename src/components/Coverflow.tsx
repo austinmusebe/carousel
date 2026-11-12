@@ -70,6 +70,21 @@ function getSlotTransform(
       opacity,
     };
   }
+  if (animationStyle === 'fade') {
+    if (offset === 0) {
+      return {
+        transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 0) scale(1)`,
+        opacity: 1,
+      };
+    }
+    const d = Math.abs(offset);
+    const opacity = Math.max(0.18, 1 - d * 0.2);
+    const scale = Math.max(0.85, 1 - d * 0.03);
+    return {
+      transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 0) scale(${scale.toFixed(3)})`,
+      opacity,
+    };
+  }
   return {
     transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 0)`,
   };

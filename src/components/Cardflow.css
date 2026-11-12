@@ -284,6 +284,39 @@
   filter: brightness(0.6);
 }
 
+/* Cardflow Crossfade Glide Mode */
+.card-stage.anim-fade .card-slot {
+  transition:
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.32s ease,
+    box-shadow 0.32s ease;
+  will-change: transform, opacity, filter;
+}
+
+.card-stage.anim-fade .card-slot.offset-0 {
+  opacity: 1;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8);
+}
+
+.card-stage.anim-fade .card-slot.offset-neg-1,
+.card-stage.anim-fade .card-slot.offset-pos-1 {
+  opacity: 0.52;
+  filter: brightness(0.72) blur(0.4px);
+}
+
+.card-stage.anim-fade .card-slot.offset-neg-2,
+.card-stage.anim-fade .card-slot.offset-pos-2 {
+  opacity: 0.32;
+  filter: brightness(0.55) blur(0.8px);
+}
+
+.card-stage.anim-fade .card-slot.offset-neg-3,
+.card-stage.anim-fade .card-slot.offset-pos-3 {
+  opacity: 0.16;
+  filter: brightness(0.4) blur(1.2px);
+}
+
 /* Card Active / Inactive States */
 .card-slot.active {
   border: 2px solid rgba(255, 255, 255, 0.65);

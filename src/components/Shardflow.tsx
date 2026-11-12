@@ -70,6 +70,21 @@ function getShardTransform(
       opacity,
     };
   }
+  if (animationStyle === 'fade') {
+    if (offset === 0) {
+      return {
+        transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 0) scale(1) skewX(-20deg)`,
+        opacity: 1,
+      };
+    }
+    const d = Math.abs(offset);
+    const opacity = Math.max(0.18, 1 - d * 0.2);
+    const scale = Math.max(0.88, 1 - d * 0.025);
+    return {
+      transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 0) scale(${scale.toFixed(3)}) skewX(-20deg)`,
+      opacity,
+    };
+  }
   return {
     transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 0) skewX(-20deg)`,
   };

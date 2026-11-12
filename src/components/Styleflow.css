@@ -69,6 +69,25 @@
   box-shadow: 0 28px 75px rgba(0, 0, 0, 0.85);
 }
 
+/* Crossfade Glide Animation for Styleflow */
+.style-stage.anim-fade .style-card {
+  transition:
+    transform 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+    height 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.32s ease;
+  will-change: transform, opacity, filter;
+}
+
+.style-stage.anim-fade .style-card.inactive {
+  filter: brightness(0.68) blur(0.4px);
+}
+
+.style-stage.anim-fade .style-card.active {
+  box-shadow: 0 22px 65px rgba(0, 0, 0, 0.75);
+}
+
 .style-card::after {
   content: "";
   position: absolute;

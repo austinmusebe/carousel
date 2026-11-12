@@ -447,7 +447,13 @@ export default function Styleflow({
             zMod = pose.isActive ? 35 : -35;
             rotY = pose.isActive ? 0 : (pose.rotateY !== 0 ? pose.rotateY * 1.35 : (pose.x > 0 ? -38 : 38));
             scaleMod = pose.isActive ? ' scale(1.02)' : ' scale(0.95)';
+          } else if (animationStyle === 'fade') {
+            scaleMod = pose.isActive ? ' scale(1.01)' : ' scale(0.97)';
           }
+
+          const cardOpacity = animationStyle === 'fade'
+            ? (pose.isActive ? 1 : Math.max(0.18, pose.opacity * 0.62))
+            : pose.opacity;
 
           return (
             <div
@@ -456,7 +462,7 @@ export default function Styleflow({
               style={{
                 width: pose.w,
                 height: pose.h,
-                opacity: pose.opacity,
+                opacity: cardOpacity,
                 zIndex: pose.zIndex,
                 borderRadius: pose.radius,
                 clipPath: pose.clip,

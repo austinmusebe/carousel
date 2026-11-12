@@ -99,6 +99,12 @@ const ANIMATION_OPTIONS: {
     badge: 'Perspective',
     desc: 'Dynamic 3D rotational flip with perspective depth on transition.',
   },
+  {
+    value: 'fade',
+    title: 'Crossfade Glide',
+    badge: 'Smooth',
+    desc: 'Cinematic ambient crossfade with soft gliding focus on transition.',
+  },
 ];
 
 function ChipRow<T extends string>({
