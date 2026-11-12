@@ -372,6 +372,23 @@
   box-shadow: 0 0 12px rgba(255, 255, 255, 0.35);
 }
 
+/* Animation Preview Graphics */
+.preview-anim-flip {
+  perspective: 200px;
+}
+
+.preview-anim-flip .preview-card-carousel.side:first-child {
+  transform: rotateY(45deg);
+}
+
+.preview-anim-flip .preview-card-carousel.side:last-child {
+  transform: rotateY(-45deg);
+}
+
+.preview-anim-flip .preview-card-carousel.center {
+  transform: scale(1.06);
+}
+
 /* Shard Preview Graphic */
 .preview-card-shard {
   height: 32px;

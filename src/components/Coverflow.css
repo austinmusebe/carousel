@@ -117,6 +117,30 @@
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
 }
 
+/* 3D Flip Animation Mode */
+.gallery-stage.anim-flip {
+  perspective: 1400px;
+  perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
+}
+
+.gallery-stage.anim-flip .gallery-slot {
+  transition:
+    transform 0.32s cubic-bezier(0.25, 1, 0.4, 1),
+    width 0.32s cubic-bezier(0.25, 1, 0.4, 1),
+    opacity 0.28s ease,
+    filter 0.28s ease;
+  will-change: transform, width, opacity;
+}
+
+.gallery-stage.anim-flip .gallery-slot.inactive {
+  filter: brightness(0.72);
+}
+
+.gallery-stage.anim-flip .gallery-slot.active {
+  box-shadow: 0 25px 65px rgba(0, 0, 0, 0.85);
+}
+
 .gallery-slot {
   position: absolute;
   top: 50%;

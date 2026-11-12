@@ -93,6 +93,12 @@ const ANIMATION_OPTIONS: {
     badge: 'Elastic',
     desc: 'Tactile physical momentum with subtle overshoot on switch.',
   },
+  {
+    value: 'flip',
+    title: '3D Flip',
+    badge: 'Perspective',
+    desc: 'Dynamic 3D rotational flip with perspective depth on transition.',
+  },
 ];
 
 function ChipRow<T extends string>({

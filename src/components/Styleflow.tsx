@@ -436,8 +436,18 @@ export default function Styleflow({
         {poses.map((pose) => {
           const entry = images[pose.index];
           const showFull = pose.isActive && mode !== 'sandy';
-          const zMod = animationStyle === 'zoom-depth' ? (pose.isActive ? 40 : -40) : 0;
-          const scaleMod = animationStyle === 'zoom-depth' ? (pose.isActive ? ' scale(1.04)' : ' scale(0.96)') : '';
+          let zMod = 0;
+          let scaleMod = '';
+          let rotY = pose.rotateY;
+
+          if (animationStyle === 'zoom-depth') {
+            zMod = pose.isActive ? 40 : -40;
+            scaleMod = pose.isActive ? ' scale(1.04)' : ' scale(0.96)';
+          } else if (animationStyle === 'flip') {
+            zMod = pose.isActive ? 35 : -35;
+            rotY = pose.isActive ? 0 : (pose.rotateY !== 0 ? pose.rotateY * 1.35 : (pose.x > 0 ? -38 : 38));
+            scaleMod = pose.isActive ? ' scale(1.02)' : ' scale(0.95)';
+          }
 
           return (
             <div
@@ -453,7 +463,7 @@ export default function Styleflow({
                 pointerEvents: pose.opacity === 0 ? 'none' : undefined,
                 transform:
                   `translate(-50%, -50%) translate3d(${pose.x}px, ${pose.y}px, ${pose.z + zMod}px) ` +
-                  `rotateY(${pose.rotateY}deg) rotate(${pose.rotate}deg) skewX(${pose.skew}deg)${scaleMod}`,
+                  `rotateY(${rotY}deg) rotate(${pose.rotate}deg) skewX(${pose.skew}deg)${scaleMod}`,
                 ['--unskew' as string]: `${-pose.skew}deg`,
               }}
               onClick={() => {
