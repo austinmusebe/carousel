@@ -102,6 +102,23 @@ function getSlotTransform(
       opacity,
     };
   }
+  if (animationStyle === 'parallax') {
+    if (offset === 0) {
+      return {
+        transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 45px) scale(1.05)`,
+        opacity: 1,
+      };
+    }
+    const d = Math.abs(offset);
+    const parallaxShift = (offset > 0 ? 1 : -1) * (d * 22 + Math.pow(d, 1.25) * 8);
+    const z = -Math.min(240, d * 55);
+    const scale = Math.max(0.72, 1 - d * 0.055);
+    const opacity = Math.max(0.45, 1 - d * 0.09);
+    return {
+      transform: `translate3d(calc(-50% + ${xOffset + parallaxShift}px), -50%, ${z}px) scale(${scale.toFixed(3)})`,
+      opacity,
+    };
+  }
   return {
     transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 0)`,
   };
@@ -526,6 +543,7 @@ export default function Coverflow({
                 transform: slotTransform.transform,
                 opacity: slotTransform.opacity,
                 zIndex: slot.isActive ? 30 : 20 - Math.abs(slot.offset),
+                ['--parallax-dir' as string]: `${slot.offset > 0 ? 1 : slot.offset < 0 ? -1 : 0}`,
               }}
               onClick={() => {
                 if (!slot.isActive) {

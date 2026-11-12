@@ -417,6 +417,20 @@
   transform: scale(1.04);
 }
 
+.preview-anim-parallax .preview-card-carousel.side:first-child {
+  transform: translateX(-4px) scale(0.9);
+  opacity: 0.45;
+}
+
+.preview-anim-parallax .preview-card-carousel.side:last-child {
+  transform: translateX(4px) scale(0.9);
+  opacity: 0.45;
+}
+
+.preview-anim-parallax .preview-card-carousel.center {
+  transform: scale(1.05);
+}
+
 /* Shard Preview Graphic */
 .preview-card-shard {
   height: 32px;

@@ -183,6 +183,40 @@
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9);
 }
 
+/* Parallax Slide Animation Mode - Multiplane Optical Parallax */
+.gallery-stage.anim-parallax {
+  perspective: 1200px;
+  perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
+}
+
+.gallery-stage.anim-parallax .gallery-slot {
+  transition:
+    transform 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+    width 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.28s ease,
+    box-shadow 0.28s ease;
+  will-change: transform, width;
+}
+
+.gallery-stage.anim-parallax .gallery-slot.inactive {
+  filter: brightness(0.72) contrast(1.04);
+}
+
+.gallery-stage.anim-parallax .gallery-slot.active {
+  box-shadow: 0 32px 85px rgba(0, 0, 0, 0.9);
+}
+
+.gallery-stage.anim-parallax .gallery-slot.inactive .gallery-image {
+  transform: scale(1.15) translateX(calc(var(--parallax-dir, 0) * -18px));
+  transition: transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gallery-stage.anim-parallax .gallery-slot.active .gallery-image {
+  transform: scale(1) translateX(0);
+  transition: transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .gallery-slot {
   position: absolute;
   top: 50%;

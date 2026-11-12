@@ -183,6 +183,40 @@
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9);
 }
 
+/* Parallax Slide Mode - Multiplane Optical Parallax */
+.shard-stage.anim-parallax {
+  perspective: 1200px;
+  perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
+}
+
+.shard-stage.anim-parallax .shard-slot {
+  transition:
+    transform 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+    width 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.28s ease,
+    box-shadow 0.28s ease;
+  will-change: transform, width;
+}
+
+.shard-stage.anim-parallax .shard-slot.inactive {
+  filter: brightness(0.72) contrast(1.04);
+}
+
+.shard-stage.anim-parallax .shard-slot.active {
+  box-shadow: 0 32px 85px rgba(0, 0, 0, 0.9);
+}
+
+.shard-stage.anim-parallax .shard-slot.inactive .shard-image {
+  transform: scale(1.16) skewX(20deg) translateX(calc(var(--parallax-dir, 0) * -18px));
+  transition: transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.shard-stage.anim-parallax .shard-slot.active .shard-image {
+  transform: scale(1) skewX(20deg) translateX(0);
+  transition: transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .shard-slot {
   position: absolute;
   top: 50%;

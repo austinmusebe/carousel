@@ -440,6 +440,7 @@ export default function Styleflow({
           let scaleMod = '';
           let rotY = pose.rotateY;
 
+          let pX = pose.x;
           if (animationStyle === 'zoom-depth') {
             zMod = pose.isActive ? 40 : -40;
             scaleMod = pose.isActive ? ' scale(1.04)' : ' scale(0.96)';
@@ -453,6 +454,10 @@ export default function Styleflow({
             zMod = pose.isActive ? 45 : -70;
             rotY = pose.isActive ? 0 : (pose.rotateY !== 0 ? pose.rotateY * 1.6 : (pose.x > 0 ? -52 : 52));
             scaleMod = pose.isActive ? ' scale(1.03)' : ' scale(0.92)';
+          } else if (animationStyle === 'parallax') {
+            zMod = pose.isActive ? 45 : -55;
+            scaleMod = pose.isActive ? ' scale(1.04)' : ' scale(0.93)';
+            pX = pose.isActive ? pose.x : pose.x + (pose.x > 0 ? 32 : -32);
           }
 
           const cardOpacity = animationStyle === 'fade'
@@ -472,9 +477,10 @@ export default function Styleflow({
                 clipPath: pose.clip,
                 pointerEvents: pose.opacity === 0 ? 'none' : undefined,
                 transform:
-                  `translate(-50%, -50%) translate3d(${pose.x}px, ${pose.y}px, ${pose.z + zMod}px) ` +
+                  `translate(-50%, -50%) translate3d(${pX}px, ${pose.y}px, ${pose.z + zMod}px) ` +
                   `rotateY(${rotY}deg) rotate(${pose.rotate}deg) skewX(${pose.skew}deg)${scaleMod}`,
                 ['--unskew' as string]: `${-pose.skew}deg`,
+                ['--parallax-dir' as string]: `${pose.x > 0 ? 1 : pose.x < 0 ? -1 : 0}`,
               }}
               onClick={() => {
                 if (!pose.isActive) setVirtualIndex(pose.index);

@@ -449,6 +449,9 @@ export default function Cardflow({
             <div
               key={slot.vIndex}
               className={`card-slot ${slot.isActive ? 'active' : 'inactive'} ${offsetClass}`}
+              style={{
+                ['--parallax-dir' as string]: `${slot.offset > 0 ? 1 : slot.offset < 0 ? -1 : 0}`,
+              }}
               onClick={() => {
                 if (!slot.isActive) {
                   switchStartRef.current = performance.now();

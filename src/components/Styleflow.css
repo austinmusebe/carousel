@@ -107,6 +107,35 @@
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9);
 }
 
+/* Parallax Slide Animation for Styleflow */
+.style-stage.anim-parallax .style-card {
+  transition:
+    transform 0.32s cubic-bezier(0.18, 0.9, 0.28, 1),
+    width 0.32s cubic-bezier(0.18, 0.9, 0.28, 1),
+    height 0.32s cubic-bezier(0.18, 0.9, 0.28, 1),
+    opacity 0.28s ease,
+    filter 0.28s ease;
+  will-change: transform, filter;
+}
+
+.style-stage.anim-parallax .style-card.inactive {
+  filter: brightness(0.7);
+}
+
+.style-stage.anim-parallax .style-card.active {
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.85);
+}
+
+.style-stage.anim-parallax .style-card.inactive .style-image {
+  transform: scale(1.15) translateX(calc(var(--parallax-dir, 0) * -16px));
+  transition: transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.style-stage.anim-parallax .style-card.active .style-image {
+  transform: scale(1) translateX(0);
+  transition: transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .style-card::after {
   content: "";
   position: absolute;

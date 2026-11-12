@@ -111,6 +111,12 @@ const ANIMATION_OPTIONS: {
     badge: 'Prism',
     desc: 'Revolves cards like facets around a deep 3D rotating prism drum.',
   },
+  {
+    value: 'parallax',
+    title: 'Parallax Slide',
+    badge: 'Multiplane',
+    desc: 'Multi-layer depth parallax with differentiated velocity curves.',
+  },
 ];
 
 function ChipRow<T extends string>({
