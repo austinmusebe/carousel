@@ -71,18 +71,18 @@ The build output is located in:
 src-tauri/target/release/
 ```
 
-### 4.3 Manual GitHub Releases
+### 4.3 GitHub Releases
 
 The repository includes a GitHub Actions workflow in `.github/workflows/release.yml`.
-The workflow runs only when you trigger it manually on the GitHub website.
+The workflow runs automatically whenever a version tag (`v*`, e.g. `v0.6.0`) is pushed, and can also be triggered manually:
 
-To create a release:
+To create a release manually:
 
 1. Open the repository on GitHub.
 2. Click the `Actions` tab.
 3. Select the `Release` workflow in the left sidebar.
 4. Click `Run workflow`.
-5. Enter the version tag (for example, `v0.1.1` or leave blank to auto-increment).
+5. Enter the version tag (for example, `v0.6.0` or leave blank to auto-increment).
 6. Click `Run workflow`.
 7. When the build completes, the installer executable is attached to the GitHub Releases page.
 
@@ -103,13 +103,19 @@ To create a release:
 - Turn the mouse wheel to scroll through images.
 - Click an inactive card to center that image.
 
-### 5.3 Set Wallpaper
+### 5.3 Color Filtering & Sorting
+
+- Click any color swatch on the floating color bar to filter and sort wallpapers by dominant color (Red, Orange, Yellow, Green, Cyan, Blue, Purple, Pink, Brown, Black, Gray, White).
+- Click **All** (or re-click the active swatch) to clear the color filter.
+- In Cardflow mode, the color filter bar arches gracefully to match the curved card fan.
+
+### 5.4 Set Wallpaper
 
 - Press `Enter` to apply the active image as your desktop wallpaper.
 - Alternatively, double-click the active image.
 - The window hides automatically after you apply the wallpaper.
 
-### 5.4 System Tray
+### 5.5 System Tray
 
 The application shows an icon in the Windows notification area (system tray).
 
@@ -121,16 +127,16 @@ The application shows an icon in the Windows notification area (system tray).
 
 ## 6. Settings
 
-Open the Settings window from the system tray menu.
+The Settings window is organized into three tabs: **General**, **Display**, and **Animation**.
 
-### 6.1 Wallpaper Directory
+### 6.1 General Settings
 
+#### Wallpaper Directory
 1. Click `Browse`.
 2. Select the folder that contains your wallpaper files.
 3. Supported file formats: `.png`, `.jpg`, `.jpeg`, `.webp`.
 
-### 6.2 Wallpaper Engine
-
+#### Wallpaper Engine
 Carousel can show your [Wallpaper Engine](https://store.steampowered.com/app/431960/) Workshop
 subscriptions next to your image folder. A wallpaper folder is optional when this is enabled.
 
@@ -151,15 +157,24 @@ the next time you open the gallery, after Steam finishes downloading them. When 
 Applying a regular image while Wallpaper Engine is running closes the active Wallpaper Engine
 wallpaper, so that the image is visible on the desktop.
 
-### 6.3 Display Options
+#### Global Shortcut
+1. Click an available preset (`Alt+W`, `Ctrl+Alt+W`, `Alt+Space`, `Ctrl+Shift+W`).
+2. Alternatively, enter a custom key combination in the input field.
+3. Click `Save changes` to apply the new shortcut.
 
-Select the gallery style in Settings:
+#### Launch on System Startup
+Toggle `Launch on system startup` to automatically start Carousel in the background when logging into Windows.
+
+### 6.2 Display Settings
+
+Select the gallery style and appearance in the **Display** tab:
 
 | Style       | Layout                                                                |
 | ----------- | --------------------------------------------------------------------- |
 | Carousel    | Horizontal card stack with a center focus.                            |
 | Shard       | Angled strips with one large card.                                    |
 | Cardflow    | Fanned rounded cards.                                                 |
+| Vinylflow   | Turntable record player with spinning vinyl and tonearm tracking.     |
 | Depth       | Cards recede into the distance behind the active card.                |
 | Geometric   | A field of tiles. Select the tile shape and the curve of the field.   |
 | Wall        | A scrolling grid. Select one of six layouts.                          |
@@ -175,18 +190,36 @@ The Depth, Geometric, Wall, Sandy, Card Hand, Collection and Duel styles are ori
 recreations of the picker styles in [Ryoku](https://github.com/Ryoku-dev/ryoku) and
 [skwd-wall](https://github.com/liixini/skwd-wall). They do not contain code from those projects.
 
-### 6.4 Global Shortcut
+#### Vinylflow Turntable Customization
+When **Vinylflow** is selected, you can customize:
+- **Turntable Chassis Skin**: Wood, Brushed Aluminum, Matte Carbon, or Vintage Cream.
+- **RPM Speed**: 33 ⅓, 45, or 78 RPM record playback speed.
+- **Tonearm Tracking**: Real-time tonearm angle tracking across record grooves with needle audio.
 
-1. Click an available preset (`Alt+W`, `Ctrl+Alt+W`, `Alt+Space`, `Ctrl+Shift+W`).
-2. Alternatively, enter a custom key combination in the input field.
-3. Click `Save changes` to apply the new shortcut.
+#### Background Blur
+- **Blur Mode**: None, Window Blur (compact card backing), or Fullscreen Blur.
+- **Blur Source**: Current desktop wallpaper or active wallpaper image.
 
-### 6.5 Reload Directory Shortcut
+### 6.3 Animation Settings
+
+Select the transition animation style in the **Animation** tab, featuring live CSS animated preview cards:
+
+| Animation Style   | Badge         | Description                                                            |
+| ----------------- | ------------- | ---------------------------------------------------------------------- |
+| Classic Slide     | Default       | Smooth linear sliding transitions between cards.                       |
+| Zoom & Depth      | Scale + Depth | Centers scale up toward the viewer while receding side cards dim.     |
+| Spring Bounce     | Dynamic       | Snappy elastic bounce with momentum overshoot and recoil.              |
+| 3D Flip           | 3D Rotate     | Cards flip on their Y-axis with 3D perspective rotation.               |
+| Crossfade Glide   | Soft Cross    | Subtle opacity crossfade blended with slight scaling.                  |
+| 3D Cube Rotate    | Prism         | Revolves cards like facets around a deep 3D rotating prism drum.       |
+| Parallax Slide    | Multiplane    | Multi-layer depth parallax with inner image counter-sliding motion.   |
+
+### 6.4 Reload Directory Shortcut
 
 Press `R` while the wallpaper gallery is open to check for newly added or removed images.
 This shortcut is built into the application and cannot be changed.
 
-### 6.6 Configuration Storage
+### 6.5 Configuration Storage
 
 The application saves settings in a JSON file at this location:
 
@@ -206,5 +239,6 @@ The application saves settings in a JSON file at this location:
   - Removes window title bars with `SetWindowLongPtrW`.
 - **Image Processing**:
   - Uses the `rayon` crate for parallel directory scanning.
+  - Extracts dominant colors from images for fast color filtering, with persistent sidecar caching.
   - Generates small in-memory JPEG thumbnails to reduce memory usage.
   - Loads full-resolution images through the Tauri asset protocol.
