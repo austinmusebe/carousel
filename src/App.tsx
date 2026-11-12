@@ -33,6 +33,7 @@ import type {
   WallLayout,
   PlayerSkin,
   VinylSpeed,
+  AnimationStyle,
 } from './types';
 import './App.css';
 
@@ -51,6 +52,7 @@ export default function App() {
   const [vinylRotation, setVinylRotation] = useState<boolean>(true);
   const [vinylSpeed, setVinylSpeed] = useState<VinylSpeed>('33');
   const [vinylArmTracking, setVinylArmTracking] = useState<boolean>(true);
+  const [animationStyle, setAnimationStyle] = useState<AnimationStyle>('classic');
   const [blurBackground, setBlurBackground] = useState<boolean>(false);
   const [blurMode, setBlurMode] = useState<BlurMode>('fullscreen');
   const [blurSource, setBlurSource] = useState<BlurSource>('wallpaper');
@@ -138,6 +140,7 @@ export default function App() {
         if (typeof config.vinyl_rotation === 'boolean') setVinylRotation(config.vinyl_rotation);
         if (config.vinyl_speed) setVinylSpeed(config.vinyl_speed);
         if (typeof config.vinyl_arm_tracking === 'boolean') setVinylArmTracking(config.vinyl_arm_tracking);
+        if (config.animation_style) setAnimationStyle(config.animation_style);
         if (typeof config.blur_background === 'boolean') {
           setBlurBackground(config.blur_background);
         }
@@ -189,6 +192,7 @@ export default function App() {
           if (typeof config.vinyl_rotation === 'boolean') setVinylRotation(config.vinyl_rotation);
           if (config.vinyl_speed) setVinylSpeed(config.vinyl_speed);
           if (typeof config.vinyl_arm_tracking === 'boolean') setVinylArmTracking(config.vinyl_arm_tracking);
+          if (config.animation_style) setAnimationStyle(config.animation_style);
           if (typeof config.blur_background === 'boolean') {
             setBlurBackground(config.blur_background);
           }
@@ -358,6 +362,7 @@ export default function App() {
           lastWallpaper={lastWallpaper}
           selectedColor={selectedColor}
           onSelectColor={setSelectedColor}
+          animationStyle={animationStyle}
         />
       ) : displayMode === 'card' ? (
         <Cardflow
@@ -371,6 +376,7 @@ export default function App() {
           lastWallpaper={lastWallpaper}
           selectedColor={selectedColor}
           onSelectColor={setSelectedColor}
+          animationStyle={animationStyle}
         />
       ) : displayMode === 'shard' ? (
         <Shardflow
@@ -384,6 +390,7 @@ export default function App() {
           lastWallpaper={lastWallpaper}
           selectedColor={selectedColor}
           onSelectColor={setSelectedColor}
+          animationStyle={animationStyle}
         />
       ) : (
         <Coverflow
@@ -397,6 +404,7 @@ export default function App() {
           lastWallpaper={lastWallpaper}
           selectedColor={selectedColor}
           onSelectColor={setSelectedColor}
+          animationStyle={animationStyle}
         />
       )}
     </>

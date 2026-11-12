@@ -81,6 +81,142 @@
   z-index: 1;
 }
 
+/* Zoom & Depth Mode */
+.shard-stage.anim-zoom-depth {
+  perspective: 1200px;
+  perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
+}
+
+.shard-stage.anim-zoom-depth .shard-slot {
+  transition:
+    transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1),
+    width 0.28s cubic-bezier(0.2, 0.9, 0.3, 1),
+    opacity 0.28s ease,
+    filter 0.28s ease;
+  will-change: transform, width, opacity;
+}
+
+.shard-stage.anim-zoom-depth .shard-slot.inactive {
+  filter: brightness(0.68);
+}
+
+.shard-stage.anim-zoom-depth .shard-slot.active {
+  box-shadow: 0 28px 75px rgba(0, 0, 0, 0.85);
+}
+
+/* Spring Bounce Mode */
+.shard-stage.anim-spring .shard-slot {
+  transition:
+    transform 0.36s cubic-bezier(0.34, 1.45, 0.64, 1),
+    width 0.36s cubic-bezier(0.34, 1.45, 0.64, 1);
+  will-change: transform, width;
+}
+
+.shard-stage.anim-spring .shard-slot.active {
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85);
+}
+
+/* 3D Flip Mode */
+.shard-stage.anim-flip {
+  perspective: 1400px;
+  perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
+}
+
+.shard-stage.anim-flip .shard-slot {
+  transition:
+    transform 0.32s cubic-bezier(0.25, 1, 0.4, 1),
+    width 0.32s cubic-bezier(0.25, 1, 0.4, 1),
+    opacity 0.28s ease,
+    filter 0.28s ease;
+  will-change: transform, width, opacity;
+}
+
+.shard-stage.anim-flip .shard-slot.inactive {
+  filter: brightness(0.72);
+}
+
+.shard-stage.anim-flip .shard-slot.active {
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.85);
+}
+
+/* Crossfade Glide Mode */
+.shard-stage.anim-fade .shard-slot {
+  transition:
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.32s ease;
+  will-change: transform, width, opacity, filter;
+}
+
+.shard-stage.anim-fade .shard-slot.inactive {
+  filter: brightness(0.65) blur(0.4px);
+}
+
+.shard-stage.anim-fade .shard-slot.active {
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.75);
+}
+
+/* 3D Cube Rotate Mode */
+.shard-stage.anim-cube {
+  perspective: 1200px;
+  perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
+}
+
+.shard-stage.anim-cube .shard-slot {
+  transition:
+    transform 0.34s cubic-bezier(0.25, 1, 0.35, 1),
+    width 0.34s cubic-bezier(0.25, 1, 0.35, 1),
+    opacity 0.28s ease,
+    filter 0.28s ease;
+  will-change: transform, width, opacity;
+}
+
+.shard-stage.anim-cube .shard-slot.inactive {
+  filter: brightness(0.65) contrast(1.05);
+}
+
+.shard-stage.anim-cube .shard-slot.active {
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9);
+}
+
+/* Parallax Slide Mode - Multiplane Optical Parallax */
+.shard-stage.anim-parallax {
+  perspective: 1200px;
+  perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
+}
+
+.shard-stage.anim-parallax .shard-slot {
+  transition:
+    transform 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+    width 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.28s ease,
+    box-shadow 0.28s ease;
+  will-change: transform, width;
+}
+
+.shard-stage.anim-parallax .shard-slot.inactive {
+  filter: brightness(0.72) contrast(1.04);
+}
+
+.shard-stage.anim-parallax .shard-slot.active {
+  box-shadow: 0 32px 85px rgba(0, 0, 0, 0.9);
+}
+
+.shard-stage.anim-parallax .shard-slot.inactive .shard-image {
+  transform: scale(1.16) skewX(20deg) translateX(calc(var(--parallax-dir, 0) * -18px));
+  transition: transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.shard-stage.anim-parallax .shard-slot.active .shard-image {
+  transform: scale(1) skewX(20deg) translateX(0);
+  transition: transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .shard-slot {
   position: absolute;
   top: 50%;
@@ -295,7 +431,7 @@
 
 .shard-toast {
   position: absolute;
-  top: max(16px, calc(50vh - 210px - 92px));
+  top: max(14px, calc(50vh - 220px - 118px));
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;

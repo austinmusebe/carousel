@@ -9,7 +9,7 @@ import {
   pillResolution,
   pillTag,
 } from '../lib/tauri';
-import type { WallpaperEntry, BlurMode, BlurSource } from '../types';
+import type { WallpaperEntry, BlurMode, BlurSource, AnimationStyle } from '../types';
 import ColorFilterBar from './ColorFilterBar';
 import './Shardflow.css';
 
@@ -24,12 +24,105 @@ interface ShardflowProps {
   lastWallpaper?: string | null;
   selectedColor?: string | null;
   onSelectColor?: (color: string | null) => void;
+  animationStyle?: AnimationStyle;
 }
 
 const VISIBLE_RADIUS = 6;
 const SHARD_STRIP_WIDTH = 110; // px
 const GAP = 28; // px
 const LRU_CAPACITY = 8;
+
+function getShardTransform(
+  offset: number,
+  xOffset: number,
+  animationStyle: AnimationStyle
+): { transform: string; opacity?: number } {
+  if (animationStyle === 'zoom-depth') {
+    if (offset === 0) {
+      return {
+        transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 40px) scale(1.04) skewX(-20deg)`,
+        opacity: 1,
+      };
+    }
+    const d = Math.abs(offset);
+    const scale = Math.max(0.74, 1 - d * 0.05);
+    const z = -Math.min(200, d * 45);
+    const opacity = Math.max(0.35, 1 - d * 0.12);
+    return {
+      transform: `translate3d(calc(-50% + ${xOffset}px), -50%, ${z}px) scale(${scale.toFixed(3)}) skewX(-20deg)`,
+      opacity,
+    };
+  }
+  if (animationStyle === 'flip') {
+    if (offset === 0) {
+      return {
+        transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 30px) rotateY(0deg) scale(1.02) skewX(-20deg)`,
+        opacity: 1,
+      };
+    }
+    const d = Math.abs(offset);
+    const rotY = offset > 0 ? -42 : 42;
+    const z = -Math.min(180, d * 40);
+    const scale = Math.max(0.76, 1 - d * 0.045);
+    const opacity = Math.max(0.35, 1 - d * 0.12);
+    return {
+      transform: `translate3d(calc(-50% + ${xOffset}px), -50%, ${z}px) rotateY(${rotY}deg) scale(${scale.toFixed(3)}) skewX(-20deg)`,
+      opacity,
+    };
+  }
+  if (animationStyle === 'fade') {
+    if (offset === 0) {
+      return {
+        transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 0) scale(1) skewX(-20deg)`,
+        opacity: 1,
+      };
+    }
+    const d = Math.abs(offset);
+    const opacity = Math.max(0.18, 1 - d * 0.2);
+    const scale = Math.max(0.88, 1 - d * 0.025);
+    return {
+      transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 0) scale(${scale.toFixed(3)}) skewX(-20deg)`,
+      opacity,
+    };
+  }
+  if (animationStyle === 'cube') {
+    if (offset === 0) {
+      return {
+        transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 0) rotateY(0deg) skewX(-20deg)`,
+        opacity: 1,
+      };
+    }
+    const d = Math.abs(offset);
+    const rotY = offset > 0 ? -55 : 55;
+    const z = -Math.min(260, d * 70);
+    const scale = Math.max(0.75, 1 - d * 0.05);
+    const opacity = Math.max(0.3, 1 - d * 0.15);
+    return {
+      transform: `translate3d(calc(-50% + ${xOffset}px), -50%, ${z}px) rotateY(${rotY}deg) scale(${scale.toFixed(3)}) skewX(-20deg)`,
+      opacity,
+    };
+  }
+  if (animationStyle === 'parallax') {
+    if (offset === 0) {
+      return {
+        transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 45px) scale(1.04) skewX(-20deg)`,
+        opacity: 1,
+      };
+    }
+    const d = Math.abs(offset);
+    const parallaxShift = (offset > 0 ? 1 : -1) * (d * 24 + Math.pow(d, 1.25) * 10);
+    const z = -Math.min(240, d * 55);
+    const scale = Math.max(0.74, 1 - d * 0.05);
+    const opacity = Math.max(0.45, 1 - d * 0.09);
+    return {
+      transform: `translate3d(calc(-50% + ${xOffset + parallaxShift}px), -50%, ${z}px) scale(${scale.toFixed(3)}) skewX(-20deg)`,
+      opacity,
+    };
+  }
+  return {
+    transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 0) skewX(-20deg)`,
+  };
+}
 
 export default function Shardflow({
   images,
@@ -42,6 +135,7 @@ export default function Shardflow({
   lastWallpaper = null,
   selectedColor = null,
   onSelectColor,
+  animationStyle = 'classic',
 }: ShardflowProps) {
   const findWallpaperIndex = useCallback(
     (targetPath?: string | null) => {
@@ -434,10 +528,11 @@ export default function Shardflow({
           <span>{refreshNotification}</span>
         </div>
       )}
-      <div className="shard-stage" onClick={handleBackdropClick}>
+      <div className={`shard-stage anim-${animationStyle}`} onClick={handleBackdropClick}>
         {slots.map((slot) => {
           const fileExt = pillTag(slot.img);
           const isHighResReady = loadedHighResMap[slot.img.path];
+          const shardTransform = getShardTransform(slot.offset, slot.xOffset, animationStyle);
 
           return (
             <div
@@ -445,8 +540,10 @@ export default function Shardflow({
               className={`shard-slot ${slot.isActive ? 'active' : 'inactive'}`}
               style={{
                 width: `${slot.cardWidth}px`,
-                transform: `translate3d(calc(-50% + ${slot.xOffset}px), -50%, 0) skewX(-20deg)`,
+                transform: shardTransform.transform,
+                opacity: shardTransform.opacity,
                 zIndex: slot.isActive ? 30 : 20 - Math.abs(slot.offset),
+                ['--parallax-dir' as string]: `${slot.offset > 0 ? 1 : slot.offset < 0 ? -1 : 0}`,
               }}
               onClick={() => {
                 if (!slot.isActive) {

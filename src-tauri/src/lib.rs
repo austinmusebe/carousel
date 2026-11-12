@@ -427,6 +427,7 @@ fn save_settings(
     vinyl_rotation: Option<bool>,
     vinyl_speed: Option<String>,
     vinyl_arm_tracking: Option<bool>,
+    animation_style: Option<String>,
 ) -> Result<(), String> {
     use tauri_plugin_autostart::ManagerExt;
     let wallpaper_engine_directory = wallpaper_engine_directory.trim().to_string();
@@ -479,6 +480,9 @@ fn save_settings(
     }
     if let Some(track) = vinyl_arm_tracking {
         config.vinyl_arm_tracking = track;
+    }
+    if let Some(anim) = animation_style {
+        config.animation_style = config::pick_option(&anim, config::ANIMATION_STYLES);
     }
     config.save(&app);
 

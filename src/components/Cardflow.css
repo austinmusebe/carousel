@@ -172,6 +172,263 @@
   pointer-events: none;
 }
 
+/* Cardflow Spring Mode */
+.card-stage.anim-spring .card-slot {
+  transition:
+    transform 0.36s cubic-bezier(0.34, 1.45, 0.64, 1),
+    opacity 0.28s ease,
+    box-shadow 0.28s ease,
+    border-color 0.28s ease;
+  will-change: transform, opacity;
+}
+
+/* Cardflow Zoom & Depth Mode */
+.card-stage.anim-zoom-depth {
+  perspective: 1200px;
+  perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
+}
+
+.card-stage.anim-zoom-depth .card-slot {
+  transition:
+    transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1),
+    opacity 0.28s ease,
+    filter 0.28s ease,
+    box-shadow 0.28s ease;
+  will-change: transform, opacity, filter;
+}
+
+.card-stage.anim-zoom-depth .card-slot.offset-0 {
+  transform: translate3d(-50%, -50%, 60px) scale(1.06) rotate(0deg);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.85);
+}
+
+.card-stage.anim-zoom-depth .card-slot.offset-neg-1 {
+  transform: translate3d(calc(-50% - 220px), calc(-50% + 18px), -50px) rotate(-14deg) scale(0.88);
+  filter: brightness(0.72);
+}
+
+.card-stage.anim-zoom-depth .card-slot.offset-pos-1 {
+  transform: translate3d(calc(-50% + 220px), calc(-50% + 18px), -50px) rotate(14deg) scale(0.88);
+  filter: brightness(0.72);
+}
+
+.card-stage.anim-zoom-depth .card-slot.offset-neg-2 {
+  transform: translate3d(calc(-50% - 410px), calc(-50% + 50px), -110px) rotate(-24deg) scale(0.78);
+  filter: brightness(0.55);
+}
+
+.card-stage.anim-zoom-depth .card-slot.offset-pos-2 {
+  transform: translate3d(calc(-50% + 410px), calc(-50% + 50px), -110px) rotate(24deg) scale(0.78);
+  filter: brightness(0.55);
+}
+
+.card-stage.anim-zoom-depth .card-slot.offset-neg-3 {
+  transform: translate3d(calc(-50% - 580px), calc(-50% + 95px), -180px) rotate(-32deg) scale(0.68);
+  filter: brightness(0.4);
+}
+
+.card-stage.anim-zoom-depth .card-slot.offset-pos-3 {
+  transform: translate3d(calc(-50% + 580px), calc(-50% + 95px), -180px) rotate(32deg) scale(0.68);
+  filter: brightness(0.4);
+}
+
+/* Cardflow 3D Flip Mode */
+.card-stage.anim-flip {
+  perspective: 1400px;
+  perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
+}
+
+.card-stage.anim-flip .card-slot {
+  transition:
+    transform 0.34s cubic-bezier(0.25, 1, 0.4, 1),
+    opacity 0.28s ease,
+    filter 0.28s ease,
+    box-shadow 0.28s ease;
+  will-change: transform, opacity, filter;
+}
+
+.card-stage.anim-flip .card-slot.offset-0 {
+  transform: translate3d(-50%, -50%, 35px) scale(1.02) rotateY(0deg) rotate(0deg);
+  box-shadow: 0 28px 75px rgba(0, 0, 0, 0.85);
+}
+
+.card-stage.anim-flip .card-slot.offset-neg-1 {
+  transform: translate3d(calc(-50% - 220px), calc(-50% + 14px), -45px) rotateY(32deg) rotate(-10deg) scale(0.92);
+  filter: brightness(0.82);
+}
+
+.card-stage.anim-flip .card-slot.offset-pos-1 {
+  transform: translate3d(calc(-50% + 220px), calc(-50% + 14px), -45px) rotateY(-32deg) rotate(10deg) scale(0.92);
+  filter: brightness(0.82);
+}
+
+.card-stage.anim-flip .card-slot.offset-neg-2 {
+  transform: translate3d(calc(-50% - 410px), calc(-50% + 44px), -90px) rotateY(46deg) rotate(-18deg) scale(0.83);
+  filter: brightness(0.7);
+}
+
+.card-stage.anim-flip .card-slot.offset-pos-2 {
+  transform: translate3d(calc(-50% + 410px), calc(-50% + 44px), -90px) rotateY(-46deg) rotate(18deg) scale(0.83);
+  filter: brightness(0.7);
+}
+
+.card-stage.anim-flip .card-slot.offset-neg-3 {
+  transform: translate3d(calc(-50% - 580px), calc(-50% + 90px), -135px) rotateY(55deg) rotate(-24deg) scale(0.74);
+  filter: brightness(0.6);
+}
+
+.card-stage.anim-flip .card-slot.offset-pos-3 {
+  transform: translate3d(calc(-50% + 580px), calc(-50% + 90px), -135px) rotateY(-55deg) rotate(24deg) scale(0.74);
+  filter: brightness(0.6);
+}
+
+/* Cardflow Crossfade Glide Mode */
+.card-stage.anim-fade .card-slot {
+  transition:
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.32s ease,
+    box-shadow 0.32s ease;
+  will-change: transform, opacity, filter;
+}
+
+.card-stage.anim-fade .card-slot.offset-0 {
+  opacity: 1;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8);
+}
+
+.card-stage.anim-fade .card-slot.offset-neg-1,
+.card-stage.anim-fade .card-slot.offset-pos-1 {
+  opacity: 0.52;
+  filter: brightness(0.72) blur(0.4px);
+}
+
+.card-stage.anim-fade .card-slot.offset-neg-2,
+.card-stage.anim-fade .card-slot.offset-pos-2 {
+  opacity: 0.32;
+  filter: brightness(0.55) blur(0.8px);
+}
+
+.card-stage.anim-fade .card-slot.offset-neg-3,
+.card-stage.anim-fade .card-slot.offset-pos-3 {
+  opacity: 0.16;
+  filter: brightness(0.4) blur(1.2px);
+}
+
+/* Cardflow 3D Cube Rotate Mode */
+.card-stage.anim-cube {
+  perspective: 1300px;
+  perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
+}
+
+.card-stage.anim-cube .card-slot {
+  transition:
+    transform 0.34s cubic-bezier(0.25, 1, 0.35, 1),
+    opacity 0.28s ease,
+    filter 0.28s ease,
+    box-shadow 0.28s ease;
+  will-change: transform, opacity, filter;
+}
+
+.card-stage.anim-cube .card-slot.offset-0 {
+  transform: translate3d(-50%, -50%, 45px) rotateY(0deg) scale(1.04);
+  box-shadow: 0 32px 85px rgba(0, 0, 0, 0.9);
+}
+
+.card-stage.anim-cube .card-slot.offset-neg-1 {
+  transform: translate3d(calc(-50% - 210px), calc(-50% + 15px), -90px) rotateY(48deg) rotate(-8deg) scale(0.9);
+  filter: brightness(0.75);
+}
+
+.card-stage.anim-cube .card-slot.offset-pos-1 {
+  transform: translate3d(calc(-50% + 210px), calc(-50% + 15px), -90px) rotateY(-48deg) rotate(8deg) scale(0.9);
+  filter: brightness(0.75);
+}
+
+.card-stage.anim-cube .card-slot.offset-neg-2 {
+  transform: translate3d(calc(-50% - 390px), calc(-50% + 45px), -180px) rotateY(68deg) rotate(-14deg) scale(0.78);
+  filter: brightness(0.55);
+}
+
+.card-stage.anim-cube .card-slot.offset-pos-2 {
+  transform: translate3d(calc(-50% + 390px), calc(-50% + 45px), -180px) rotateY(-68deg) rotate(14deg) scale(0.78);
+  filter: brightness(0.55);
+}
+
+.card-stage.anim-cube .card-slot.offset-neg-3 {
+  transform: translate3d(calc(-50% - 540px), calc(-50% + 85px), -270px) rotateY(78deg) rotate(-20deg) scale(0.66);
+  filter: brightness(0.38);
+}
+
+.card-stage.anim-cube .card-slot.offset-pos-3 {
+  transform: translate3d(calc(-50% + 540px), calc(-50% + 85px), -270px) rotateY(-78deg) rotate(20deg) scale(0.66);
+  filter: brightness(0.38);
+}
+
+/* Cardflow Parallax Slide Mode */
+.card-stage.anim-parallax {
+  perspective: 1200px;
+  perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
+}
+
+.card-stage.anim-parallax .card-slot {
+  transition:
+    transform 0.32s cubic-bezier(0.18, 0.9, 0.28, 1),
+    opacity 0.28s ease,
+    filter 0.28s ease,
+    box-shadow 0.28s ease;
+  will-change: transform, opacity, filter;
+}
+
+.card-stage.anim-parallax .card-slot.offset-0 {
+  transform: translate3d(-50%, -50%, 35px) scale(1.03) rotate(0deg);
+  box-shadow: 0 28px 75px rgba(0, 0, 0, 0.9);
+}
+
+.card-stage.anim-parallax .card-slot.offset-neg-1 {
+  transform: translate3d(calc(-50% - 245px), calc(-50% + 12px), -35px) rotate(-10deg) scale(0.92);
+  filter: brightness(0.82);
+}
+
+.card-stage.anim-parallax .card-slot.offset-pos-1 {
+  transform: translate3d(calc(-50% + 245px), calc(-50% + 12px), -35px) rotate(10deg) scale(0.92);
+  filter: brightness(0.82);
+}
+
+.card-stage.anim-parallax .card-slot.offset-neg-2 {
+  transform: translate3d(calc(-50% - 455px), calc(-50% + 38px), -80px) rotate(-18deg) scale(0.83);
+  filter: brightness(0.68);
+}
+
+.card-stage.anim-parallax .card-slot.offset-pos-2 {
+  transform: translate3d(calc(-50% + 455px), calc(-50% + 38px), -80px) rotate(18deg) scale(0.83);
+  filter: brightness(0.68);
+}
+
+.card-stage.anim-parallax .card-slot.offset-neg-3 {
+  transform: translate3d(calc(-50% - 640px), calc(-50% + 78px), -130px) rotate(-25deg) scale(0.74);
+  filter: brightness(0.5);
+}
+
+.card-stage.anim-parallax .card-slot.offset-pos-3 {
+  transform: translate3d(calc(-50% + 640px), calc(-50% + 78px), -130px) rotate(25deg) scale(0.74);
+  filter: brightness(0.5);
+}
+
+.card-stage.anim-parallax .card-slot.inactive .card-image {
+  transform: scale(1.15) translateX(calc(var(--parallax-dir, 0) * -16px));
+  transition: transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-stage.anim-parallax .card-slot.active .card-image {
+  transform: scale(1) translateX(0);
+  transition: transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 /* Card Active / Inactive States */
 .card-slot.active {
   border: 2px solid rgba(255, 255, 255, 0.65);
@@ -368,7 +625,7 @@
 /* Refresh Notification Toast */
 .card-toast {
   position: absolute;
-  top: max(16px, calc(50vh - 210px - 120px));
+  top: max(14px, calc(50vh - 210px - 168px));
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;

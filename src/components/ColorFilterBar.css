@@ -1,7 +1,7 @@
 /* Standard Mode */
 .color-filter-container {
   position: absolute;
-  top: max(16px, calc(50vh - 210px - 48px));
+  top: max(18px, calc(50vh - 220px - 70px));
   left: 50%;
   transform: translateX(-50%);
   z-index: 50;
@@ -36,7 +36,7 @@
 /* Arched Mode (Cardflow) */
 .color-filter-container.is-arched {
   position: absolute;
-  top: max(16px, calc(50vh - 210px - 82px));
+  top: max(16px, calc(50vh - 210px - 124px));
   left: 50%;
   transform: translateX(-50%);
   z-index: 50;

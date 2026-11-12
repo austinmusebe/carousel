@@ -9,7 +9,7 @@ import {
   pillResolution,
   pillTag,
 } from '../lib/tauri';
-import type { WallpaperEntry, BlurMode, BlurSource } from '../types';
+import type { WallpaperEntry, BlurMode, BlurSource, AnimationStyle } from '../types';
 import ColorFilterBar from './ColorFilterBar';
 import './Coverflow.css';
 
@@ -24,12 +24,105 @@ interface CoverflowProps {
   lastWallpaper?: string | null;
   selectedColor?: string | null;
   onSelectColor?: (color: string | null) => void;
+  animationStyle?: AnimationStyle;
 }
 
 const VISIBLE_RADIUS = 6;
 const STRIP_WIDTH = 64; // px
 const GAP = 10; // px
 const LRU_CAPACITY = 8;
+
+function getSlotTransform(
+  offset: number,
+  xOffset: number,
+  animationStyle: AnimationStyle
+): { transform: string; opacity?: number } {
+  if (animationStyle === 'zoom-depth') {
+    if (offset === 0) {
+      return {
+        transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 40px) scale(1.04)`,
+        opacity: 1,
+      };
+    }
+    const d = Math.abs(offset);
+    const scale = Math.max(0.72, 1 - d * 0.055);
+    const z = -Math.min(220, d * 45);
+    const opacity = Math.max(0.35, 1 - d * 0.12);
+    return {
+      transform: `translate3d(calc(-50% + ${xOffset}px), -50%, ${z}px) scale(${scale.toFixed(3)})`,
+      opacity,
+    };
+  }
+  if (animationStyle === 'flip') {
+    if (offset === 0) {
+      return {
+        transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 25px) rotateY(0deg) scale(1.02)`,
+        opacity: 1,
+      };
+    }
+    const d = Math.abs(offset);
+    const rotY = offset > 0 ? -48 : 48;
+    const z = -Math.min(180, d * 40);
+    const scale = Math.max(0.75, 1 - d * 0.05);
+    const opacity = Math.max(0.35, 1 - d * 0.12);
+    return {
+      transform: `translate3d(calc(-50% + ${xOffset}px), -50%, ${z}px) rotateY(${rotY}deg) scale(${scale.toFixed(3)})`,
+      opacity,
+    };
+  }
+  if (animationStyle === 'fade') {
+    if (offset === 0) {
+      return {
+        transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 0) scale(1)`,
+        opacity: 1,
+      };
+    }
+    const d = Math.abs(offset);
+    const opacity = Math.max(0.18, 1 - d * 0.2);
+    const scale = Math.max(0.85, 1 - d * 0.03);
+    return {
+      transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 0) scale(${scale.toFixed(3)})`,
+      opacity,
+    };
+  }
+  if (animationStyle === 'cube') {
+    if (offset === 0) {
+      return {
+        transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 0) rotateY(0deg)`,
+        opacity: 1,
+      };
+    }
+    const d = Math.abs(offset);
+    const rotY = offset > 0 ? -62 : 62;
+    const z = -Math.min(280, d * 75);
+    const scale = Math.max(0.72, 1 - d * 0.05);
+    const opacity = Math.max(0.3, 1 - d * 0.15);
+    return {
+      transform: `translate3d(calc(-50% + ${xOffset}px), -50%, ${z}px) rotateY(${rotY}deg) scale(${scale.toFixed(3)})`,
+      opacity,
+    };
+  }
+  if (animationStyle === 'parallax') {
+    if (offset === 0) {
+      return {
+        transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 45px) scale(1.05)`,
+        opacity: 1,
+      };
+    }
+    const d = Math.abs(offset);
+    const parallaxShift = (offset > 0 ? 1 : -1) * (d * 22 + Math.pow(d, 1.25) * 8);
+    const z = -Math.min(240, d * 55);
+    const scale = Math.max(0.72, 1 - d * 0.055);
+    const opacity = Math.max(0.45, 1 - d * 0.09);
+    return {
+      transform: `translate3d(calc(-50% + ${xOffset + parallaxShift}px), -50%, ${z}px) scale(${scale.toFixed(3)})`,
+      opacity,
+    };
+  }
+  return {
+    transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 0)`,
+  };
+}
 
 export default function Coverflow({
   images,
@@ -42,6 +135,7 @@ export default function Coverflow({
   lastWallpaper = null,
   selectedColor = null,
   onSelectColor,
+  animationStyle = 'classic',
 }: CoverflowProps) {
   const findWallpaperIndex = useCallback(
     (targetPath?: string | null) => {
@@ -434,10 +528,11 @@ export default function Coverflow({
           <span>{refreshNotification}</span>
         </div>
       )}
-      <div className="gallery-stage" onClick={handleBackdropClick}>
+      <div className={`gallery-stage anim-${animationStyle}`} onClick={handleBackdropClick}>
         {slots.map((slot) => {
           const fileExt = pillTag(slot.img);
           const isHighResReady = loadedHighResMap[slot.img.path];
+          const slotTransform = getSlotTransform(slot.offset, slot.xOffset, animationStyle);
 
           return (
             <div
@@ -445,8 +540,10 @@ export default function Coverflow({
               className={`gallery-slot ${slot.isActive ? 'active' : 'inactive'}`}
               style={{
                 width: `${slot.cardWidth}px`,
-                transform: `translate3d(calc(-50% + ${slot.xOffset}px), -50%, 0)`,
+                transform: slotTransform.transform,
+                opacity: slotTransform.opacity,
                 zIndex: slot.isActive ? 30 : 20 - Math.abs(slot.offset),
+                ['--parallax-dir' as string]: `${slot.offset > 0 ? 1 : slot.offset < 0 ? -1 : 0}`,
               }}
               onClick={() => {
                 if (!slot.isActive) {
