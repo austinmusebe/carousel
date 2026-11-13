@@ -37,7 +37,6 @@ export type AnimationStyle =
   | 'classic'
   | 'zoom-depth'
   | 'spring'
-  | 'flip'
   | 'fade'
   | 'cube'
   | 'parallax';

@@ -53,23 +53,6 @@ function getShardTransform(
       opacity,
     };
   }
-  if (animationStyle === 'flip') {
-    if (offset === 0) {
-      return {
-        transform: `translate3d(calc(-50% + ${xOffset}px), -50%, 30px) rotateY(0deg) scale(1.02) skewX(-20deg)`,
-        opacity: 1,
-      };
-    }
-    const d = Math.abs(offset);
-    const rotY = offset > 0 ? -42 : 42;
-    const z = -Math.min(180, d * 40);
-    const scale = Math.max(0.76, 1 - d * 0.045);
-    const opacity = Math.max(0.35, 1 - d * 0.12);
-    return {
-      transform: `translate3d(calc(-50% + ${xOffset}px), -50%, ${z}px) rotateY(${rotY}deg) scale(${scale.toFixed(3)}) skewX(-20deg)`,
-      opacity,
-    };
-  }
   if (animationStyle === 'fade') {
     if (offset === 0) {
       return {

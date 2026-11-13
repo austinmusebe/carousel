@@ -444,10 +444,6 @@ export default function Styleflow({
           if (animationStyle === 'zoom-depth') {
             zMod = pose.isActive ? 40 : -40;
             scaleMod = pose.isActive ? ' scale(1.04)' : ' scale(0.96)';
-          } else if (animationStyle === 'flip') {
-            zMod = pose.isActive ? 35 : -35;
-            rotY = pose.isActive ? 0 : (pose.rotateY !== 0 ? pose.rotateY * 1.35 : (pose.x > 0 ? -38 : 38));
-            scaleMod = pose.isActive ? ' scale(1.02)' : ' scale(0.95)';
           } else if (animationStyle === 'fade') {
             scaleMod = pose.isActive ? ' scale(1.01)' : ' scale(0.97)';
           } else if (animationStyle === 'cube') {

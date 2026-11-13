@@ -36,7 +36,6 @@ pub const ANIMATION_STYLES: &[&str] = &[
     "classic",
     "zoom-depth",
     "spring",
-    "flip",
     "fade",
     "cube",
     "parallax",

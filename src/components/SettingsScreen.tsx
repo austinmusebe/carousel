@@ -8,6 +8,7 @@ import {
   quitApp,
   logFrontend,
 } from '../lib/tauri';
+import { parseAnimationStyle } from '../lib/styleLayouts';
 import type {
   DisplayMode,
   BlurMode,
@@ -94,12 +95,6 @@ const ANIMATION_OPTIONS: {
     desc: 'Tactile physical momentum with subtle overshoot on switch.',
   },
   {
-    value: 'flip',
-    title: '3D Flip',
-    badge: 'Perspective',
-    desc: 'Dynamic 3D rotational flip with perspective depth on transition.',
-  },
-  {
     value: 'fade',
     title: 'Crossfade Glide',
     badge: 'Smooth',
@@ -184,7 +179,7 @@ export default function SettingsScreen() {
         setGeometricTile(cfg.geometric_tile || 'hexagon');
         setGeometricCurve(cfg.geometric_curve || 'flat');
         setWallLayout(cfg.wall_layout || 'uniform');
-        if (cfg.animation_style) setAnimationStyle(cfg.animation_style);
+        if (cfg.animation_style) setAnimationStyle(parseAnimationStyle(cfg.animation_style));
         if (cfg.vinyl_skin) setVinylSkin(cfg.vinyl_skin);
         if (typeof cfg.vinyl_rotation === 'boolean') setVinylRotation(cfg.vinyl_rotation);
         if (cfg.vinyl_speed) setVinylSpeed(cfg.vinyl_speed);
@@ -934,6 +929,8 @@ export default function SettingsScreen() {
                         <div className={`display-option-preview preview-anim preview-anim-${option.value}`}>
                           <div className="preview-card-carousel side" />
                           <div className="preview-card-carousel center" />
+                          <div className="preview-card-carousel side" />
+                          <div className="preview-card-carousel side" />
                           <div className="preview-card-carousel side" />
                         </div>
                         <div className="display-option-info">

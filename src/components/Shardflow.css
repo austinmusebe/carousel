@@ -117,30 +117,6 @@
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85);
 }
 
-/* 3D Flip Mode */
-.shard-stage.anim-flip {
-  perspective: 1400px;
-  perspective-origin: 50% 50%;
-  transform-style: preserve-3d;
-}
-
-.shard-stage.anim-flip .shard-slot {
-  transition:
-    transform 0.32s cubic-bezier(0.25, 1, 0.4, 1),
-    width 0.32s cubic-bezier(0.25, 1, 0.4, 1),
-    opacity 0.28s ease,
-    filter 0.28s ease;
-  will-change: transform, width, opacity;
-}
-
-.shard-stage.anim-flip .shard-slot.inactive {
-  filter: brightness(0.72);
-}
-
-.shard-stage.anim-flip .shard-slot.active {
-  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.85);
-}
-
 /* Crossfade Glide Mode */
 .shard-stage.anim-fade .shard-slot {
   transition:

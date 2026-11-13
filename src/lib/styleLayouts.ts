@@ -1,4 +1,5 @@
 import type {
+  AnimationStyle,
   DisplayMode,
   GeometricCurve,
   GeometricTile,
@@ -20,12 +21,17 @@ export const STYLEFLOW_MODES: StyleflowMode[] = [
 
 const ROLLABLE_MODES: RollableMode[] = ['carousel', 'shard', 'card', 'vinyl', ...STYLEFLOW_MODES];
 const DISPLAY_MODES: DisplayMode[] = [...ROLLABLE_MODES, 'random'];
+const ANIMATION_STYLES: AnimationStyle[] = ['classic', 'zoom-depth', 'spring', 'fade', 'cube', 'parallax'];
 const TILES: GeometricTile[] = ['hexagon', 'triangle', 'diamond', 'rhombus'];
 const CURVES: GeometricCurve[] = ['flat', 'arc', 'wave', 's', 'cylinder'];
 const WALLS: WallLayout[] = ['uniform', 'brick', 'masonry', 'justified', 'editorial', 'cylinder'];
 
 export function parseDisplayMode(mode?: string | null): DisplayMode {
   return DISPLAY_MODES.find((m) => m === mode) ?? 'shard';
+}
+
+export function parseAnimationStyle(style?: string | null): AnimationStyle {
+  return ANIMATION_STYLES.find((s) => s === style) ?? 'classic';
 }
 
 export interface StyleRoll {

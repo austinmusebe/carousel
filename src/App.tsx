@@ -20,7 +20,7 @@ import {
   wallpaperSourceKey,
 } from './lib/tauri';
 import { filterAndSortWallpapers } from './lib/colorFilter';
-import { isStyleflowMode, parseDisplayMode, rollStyle } from './lib/styleLayouts';
+import { isStyleflowMode, parseAnimationStyle, parseDisplayMode, rollStyle } from './lib/styleLayouts';
 import type { StyleRoll } from './lib/styleLayouts';
 import type {
   AppConfig,
@@ -140,7 +140,7 @@ export default function App() {
         if (typeof config.vinyl_rotation === 'boolean') setVinylRotation(config.vinyl_rotation);
         if (config.vinyl_speed) setVinylSpeed(config.vinyl_speed);
         if (typeof config.vinyl_arm_tracking === 'boolean') setVinylArmTracking(config.vinyl_arm_tracking);
-        if (config.animation_style) setAnimationStyle(config.animation_style);
+        if (config.animation_style) setAnimationStyle(parseAnimationStyle(config.animation_style));
         if (typeof config.blur_background === 'boolean') {
           setBlurBackground(config.blur_background);
         }
@@ -192,7 +192,7 @@ export default function App() {
           if (typeof config.vinyl_rotation === 'boolean') setVinylRotation(config.vinyl_rotation);
           if (config.vinyl_speed) setVinylSpeed(config.vinyl_speed);
           if (typeof config.vinyl_arm_tracking === 'boolean') setVinylArmTracking(config.vinyl_arm_tracking);
-          if (config.animation_style) setAnimationStyle(config.animation_style);
+          if (config.animation_style) setAnimationStyle(parseAnimationStyle(config.animation_style));
           if (typeof config.blur_background === 'boolean') {
             setBlurBackground(config.blur_background);
           }
