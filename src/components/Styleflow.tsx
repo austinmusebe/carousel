@@ -5,6 +5,7 @@ import {
   openSettingsWindow,
   logFrontend,
   isSamePath,
+  pickRandomIndex,
   pillResolution,
   pillTag,
 } from '../lib/tauri';
@@ -27,6 +28,7 @@ import type {
   AnimationStyle,
 } from '../types';
 import ColorFilterBar from './ColorFilterBar';
+import RandomiseButton from './RandomiseButton';
 import './Shardflow.css';
 import './Styleflow.css';
 
@@ -46,6 +48,7 @@ interface StyleflowProps {
   selectedColor?: string | null;
   onSelectColor?: (color: string | null) => void;
   animationStyle?: AnimationStyle;
+  randomOnOpen?: boolean;
 }
 
 const GRAIN_SIZE = 8; // px
@@ -197,6 +200,7 @@ export default function Styleflow({
   selectedColor = null,
   onSelectColor,
   animationStyle = 'classic',
+  randomOnOpen = false,
 }: StyleflowProps) {
   const findWallpaperIndex = useCallback(
     (targetPath?: string | null) => {
@@ -207,13 +211,19 @@ export default function Styleflow({
     [images]
   );
 
-  const [virtualIndex, setVirtualIndex] = useState(() => findWallpaperIndex(lastWallpaper));
+  const [virtualIndex, setVirtualIndex] = useState(() =>
+    randomOnOpen ? pickRandomIndex(images.length) : findWallpaperIndex(lastWallpaper)
+  );
   const [viewport, setViewport] = useState({ vw: window.innerWidth, vh: window.innerHeight });
   const [refreshNotification, setRefreshNotification] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const count = images.length;
   const activeIndex = count > 0 ? ((virtualIndex % count) + count) % count : 0;
+  const countRef = useRef(count);
+  countRef.current = count;
+  const activeIndexRef = useRef(activeIndex);
+  activeIndexRef.current = activeIndex;
   const activeEntry: WallpaperEntry | undefined = images[activeIndex];
 
   const options: LayoutOptions = useMemo(
@@ -230,17 +240,21 @@ export default function Styleflow({
     logFrontend('INFO', `[Styleflow] Rendered '${mode}' with ${count} images`);
   }, [mode, count]);
 
-  const initialSyncDoneRef = useRef(Boolean(lastWallpaper && count > 0));
+  const initialSyncDoneRef = useRef(randomOnOpen || Boolean(lastWallpaper && count > 0));
   useEffect(() => {
-    if (!initialSyncDoneRef.current && count > 0 && lastWallpaper) {
+    if (!initialSyncDoneRef.current && !randomOnOpen && count > 0 && lastWallpaper) {
       setVirtualIndex(findWallpaperIndex(lastWallpaper));
       initialSyncDoneRef.current = true;
     }
-  }, [count, lastWallpaper, findWallpaperIndex]);
+  }, [count, lastWallpaper, findWallpaperIndex, randomOnOpen]);
 
   useEffect(() => {
     const handleReset = (e: Event) => {
-      const { detail } = e as CustomEvent<{ lastWallpaper?: string | null }>;
+      const { detail } = e as CustomEvent<{ lastWallpaper?: string | null; random?: boolean }>;
+      if (detail?.random) {
+        setVirtualIndex(pickRandomIndex(countRef.current, activeIndexRef.current));
+        return;
+      }
       setVirtualIndex(findWallpaperIndex(detail?.lastWallpaper ?? lastWallpaper));
     };
     window.addEventListener('reset-to-last-wallpaper', handleReset);
@@ -299,6 +313,11 @@ export default function Styleflow({
     },
     [count, mode, cells, activeIndex]
   );
+
+  const handleRandomise = useCallback(() => {
+    if (count <= 1) return;
+    setVirtualIndex(pickRandomIndex(count, activeIndex));
+  }, [count, activeIndex]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -502,6 +521,7 @@ export default function Styleflow({
           );
         })}
       </div>
+      {randomOnOpen && <RandomiseButton onRandomise={handleRandomise} variant="style" />}
       <div className="style-pill">
         <span className="shard-pill-resolution">{pillResolution(activeEntry)}</span>
         <div className="shard-pill-bottom">

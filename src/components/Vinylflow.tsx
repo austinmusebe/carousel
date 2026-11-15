@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { listen } from '@tauri-apps/api/event';
 import { convertFileSrc } from '@tauri-apps/api/core';
-import { openSettingsWindow, logImageSwitch, logFrontend, isSamePath, pillResolution, pillTag } from '../lib/tauri';
+import { openSettingsWindow, logImageSwitch, logFrontend, isSamePath, pickRandomIndex, pillResolution, pillTag } from '../lib/tauri';
 import type { WallpaperEntry, BlurMode, BlurSource, PlayerSkin, VinylSpeed } from '../types';
 import ColorFilterBar from './ColorFilterBar';
+import RandomiseButton from './RandomiseButton';
 import './Vinylflow.css';
 
 interface VinylflowProps {
@@ -22,6 +23,7 @@ interface VinylflowProps {
   rotation?: boolean;
   speed?: VinylSpeed;
   armTracking?: boolean;
+  randomOnOpen?: boolean;
 }
 
 const LRU_CAPACITY = 8;
@@ -184,6 +186,7 @@ export default function Vinylflow({
   rotation = true,
   speed = '33',
   armTracking = true,
+  randomOnOpen = false,
 }: VinylflowProps) {
   const findWallpaperIndex = useCallback(
     (targetPath?: string | null) => {
@@ -194,7 +197,9 @@ export default function Vinylflow({
     [images]
   );
 
-  const [virtualIndex, setVirtualIndex] = useState(() => findWallpaperIndex(lastWallpaper));
+  const [virtualIndex, setVirtualIndex] = useState(() =>
+    randomOnOpen ? pickRandomIndex(images.length) : findWallpaperIndex(lastWallpaper)
+  );
   const [activeLastWallpaper, setActiveLastWallpaper] = useState<string | null>(lastWallpaper);
   const [loadedHighResMap, setLoadedHighResMap] = useState<Record<string, boolean>>({});
 
@@ -230,6 +235,10 @@ export default function Vinylflow({
 
   // Actual index in images array
   const activeActualIndex = count > 0 ? ((virtualIndex % count) + count) % count : 0;
+  const countRef = useRef(count);
+  countRef.current = count;
+  const activeActualIndexRef = useRef(activeActualIndex);
+  activeActualIndexRef.current = activeActualIndex;
   const progressRatio = count > 1 ? activeActualIndex / (count - 1) : 0;
   const armTrackAngle = currentArmTracking ? progressRatio * 11 : 0;
 
@@ -432,27 +441,31 @@ export default function Vinylflow({
   }, []);
 
   // Initial sync when wallpapers load
-  const initialSyncDoneRef = useRef(Boolean(lastWallpaper && images.length > 0));
+  const initialSyncDoneRef = useRef(randomOnOpen || Boolean(lastWallpaper && images.length > 0));
   useEffect(() => {
-    if (!initialSyncDoneRef.current && images.length > 0 && lastWallpaper) {
+    if (!initialSyncDoneRef.current && !randomOnOpen && images.length > 0 && lastWallpaper) {
       const targetIdx = findWallpaperIndex(lastWallpaper);
       if (targetIdx !== 0) {
         setVirtualIndex(targetIdx);
       }
       initialSyncDoneRef.current = true;
     }
-  }, [images, lastWallpaper, findWallpaperIndex]);
+  }, [images, lastWallpaper, findWallpaperIndex, randomOnOpen]);
 
   // Re-sync when reset event fires
   useEffect(() => {
     const handleReset = (e: Event) => {
-      const customEvent = e as CustomEvent<{ lastWallpaper?: string | null }>;
+      const customEvent = e as CustomEvent<{ lastWallpaper?: string | null; random?: boolean }>;
       const targetPath = customEvent.detail?.lastWallpaper ?? lastWallpaper;
       if (targetPath) {
         setActiveLastWallpaper(targetPath);
       }
-      const targetIdx = findWallpaperIndex(targetPath);
       switchStartRef.current = performance.now();
+      if (customEvent.detail?.random) {
+        setVirtualIndex(pickRandomIndex(countRef.current, activeActualIndexRef.current));
+        return;
+      }
+      const targetIdx = findWallpaperIndex(targetPath);
       setVirtualIndex(targetIdx);
     };
 
@@ -576,16 +589,14 @@ export default function Vinylflow({
   }, [onRefresh, isRefreshing, images, activeActualIndex]);
 
   // Motion Choreography & Key-Repeat Guard: Overlapped timing under ~250ms total
-  const triggerNavigation = useCallback(
-    (direction: 1 | -1) => {
+  const swapToVirtualIndex = useCallback(
+    (targetDirection: 'next' | 'prev', updateIndex: (prev: number) => number) => {
       if (count === 0) return;
       switchStartRef.current = performance.now();
 
-      const targetDirection: 'next' | 'prev' = direction === 1 ? 'next' : 'prev';
-
       // Instant swap under reduced-motion preferences
       if (isReducedMotionRef.current) {
-        setVirtualIndex((prev) => prev + direction);
+        setVirtualIndex(updateIndex);
         return;
       }
 
@@ -622,7 +633,7 @@ export default function Vinylflow({
       }
 
       // Update virtual index immediately so labels update instantly
-      setVirtualIndex((prev) => prev + direction);
+      setVirtualIndex(updateIndex);
 
       // Settle timer: drop tonearm and ramp spin rate back up once rapid navigation stops
       if (settleTimerRef.current) window.clearTimeout(settleTimerRef.current);
@@ -646,8 +657,21 @@ export default function Vinylflow({
     [count, images, activeActualIndex]
   );
 
+  const triggerNavigation = useCallback(
+    (direction: 1 | -1) => {
+      swapToVirtualIndex(direction === 1 ? 'next' : 'prev', (prev) => prev + direction);
+    },
+    [swapToVirtualIndex]
+  );
+
   const nextSlide = useCallback(() => triggerNavigation(1), [triggerNavigation]);
   const prevSlide = useCallback(() => triggerNavigation(-1), [triggerNavigation]);
+
+  const handleRandomise = useCallback(() => {
+    if (count <= 1) return;
+    const nextIdx = pickRandomIndex(count, activeActualIndex);
+    swapToVirtualIndex('next', () => nextIdx);
+  }, [count, activeActualIndex, swapToVirtualIndex]);
 
   // Apply Wallpaper: NEVER BLOCKED by animation
   const handleApply = useCallback(() => {
@@ -1078,6 +1102,8 @@ export default function Vinylflow({
           </div>
         </div>
       )}
+
+      {randomOnOpen && <RandomiseButton onRandomise={handleRandomise} variant="vinyl" />}
 
       {/* Bottom Metadata Pill */}
       {currentWallpaper && (

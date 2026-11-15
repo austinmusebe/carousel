@@ -163,6 +163,7 @@ export default function SettingsScreen() {
   const [blurMode, setBlurMode] = useState<BlurMode>('fullscreen');
   const [blurSource, setBlurSource] = useState<BlurSource>('wallpaper');
   const [animationStyle, setAnimationStyle] = useState<AnimationStyle>('classic');
+  const [randomWallpaperOnOpen, setRandomWallpaperOnOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -187,6 +188,7 @@ export default function SettingsScreen() {
         setBlurBackground(cfg.blur_background ?? false);
         setBlurMode(cfg.blur_mode || 'fullscreen');
         setBlurSource(cfg.blur_source || 'wallpaper');
+        setRandomWallpaperOnOpen(cfg.random_wallpaper_on_open ?? false);
         try {
           const enabled = await isAutostartEnabled();
           setAutostart(enabled);
@@ -257,7 +259,8 @@ export default function SettingsScreen() {
         vinylRotation,
         vinylSpeed,
         vinylArmTracking,
-        animationStyle
+        animationStyle,
+        randomWallpaperOnOpen
       );
       setStatusMessage('Settings saved successfully');
       setIsError(false);
@@ -466,6 +469,31 @@ export default function SettingsScreen() {
                     </div>
                     <span className="switch-label-text">
                       {autostart ? 'Launch on startup (enabled)' : 'Launch on startup (disabled)'}
+                    </span>
+                  </label>
+                </section>
+
+                {/* Section: Random Wallpaper on Open */}
+                <section className="settings-section">
+                  <div className="section-meta">
+                    <label className="section-label">Random Wallpaper on Open</label>
+                    <p className="section-hint">
+                      Select a random wallpaper each time you open the carousel and show a Randomise button underneath.
+                    </p>
+                  </div>
+                  <label className="switch-row">
+                    <div className="switch-wrapper">
+                      <input
+                        type="checkbox"
+                        className="switch-input"
+                        id="random-on-open-toggle"
+                        checked={randomWallpaperOnOpen}
+                        onChange={(e) => setRandomWallpaperOnOpen(e.target.checked)}
+                      />
+                      <span className="switch-track" />
+                    </div>
+                    <span className="switch-label-text">
+                      {randomWallpaperOnOpen ? 'Random wallpaper on open (enabled)' : 'Random wallpaper on open (disabled)'}
                     </span>
                   </label>
                 </section>

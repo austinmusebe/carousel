@@ -126,6 +126,8 @@ pub struct AppConfig {
     pub vinyl_arm_tracking: bool,
     #[serde(default = "default_animation_style")]
     pub animation_style: String,
+    #[serde(default)]
+    pub random_wallpaper_on_open: bool,
 
 }
 
@@ -151,6 +153,7 @@ impl Default for AppConfig {
             vinyl_speed: default_vinyl_speed(),
             vinyl_arm_tracking: default_vinyl_arm_tracking(),
             animation_style: default_animation_style(),
+            random_wallpaper_on_open: false,
 
         }
     }
@@ -377,6 +380,20 @@ mod tests {
         let json = r#"{"shortcut": "Alt+W", "wallpaper_directory": "", "animation_style": "zoom-depth"}"#;
         let config: AppConfig = serde_json::from_str(json).expect("should parse");
         assert_eq!(config.animation_style, "zoom-depth");
+    }
+
+    #[test]
+    fn test_random_wallpaper_on_open_default_and_parsing() {
+        let default_cfg = AppConfig::default();
+        assert!(!default_cfg.random_wallpaper_on_open);
+
+        let missing_field_json = r#"{"shortcut": "Alt+W", "wallpaper_directory": ""}"#;
+        let missing_cfg: AppConfig = serde_json::from_str(missing_field_json).expect("should parse");
+        assert!(!missing_cfg.random_wallpaper_on_open);
+
+        let enabled_json = r#"{"shortcut": "Alt+W", "wallpaper_directory": "", "random_wallpaper_on_open": true}"#;
+        let enabled_cfg: AppConfig = serde_json::from_str(enabled_json).expect("should parse");
+        assert!(enabled_cfg.random_wallpaper_on_open);
     }
 
     #[test]

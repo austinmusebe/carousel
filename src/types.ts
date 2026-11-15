@@ -61,5 +61,6 @@ export interface AppConfig {
   vinyl_speed?: VinylSpeed;
   vinyl_arm_tracking?: boolean;
   animation_style?: AnimationStyle;
+  random_wallpaper_on_open?: boolean;
 }
 

@@ -6,11 +6,13 @@ import {
   logImageSwitch,
   logFrontend,
   isSamePath,
+  pickRandomIndex,
   pillResolution,
   pillTag,
 } from '../lib/tauri';
 import type { WallpaperEntry, BlurMode, BlurSource, AnimationStyle } from '../types';
 import ColorFilterBar from './ColorFilterBar';
+import RandomiseButton from './RandomiseButton';
 import './Cardflow.css';
 
 interface CardflowProps {
@@ -25,6 +27,7 @@ interface CardflowProps {
   selectedColor?: string | null;
   onSelectColor?: (color: string | null) => void;
   animationStyle?: AnimationStyle;
+  randomOnOpen?: boolean;
 }
 
 const VISIBLE_RADIUS = 4;
@@ -42,6 +45,7 @@ export default function Cardflow({
   selectedColor = null,
   onSelectColor,
   animationStyle = 'classic',
+  randomOnOpen = false,
 }: CardflowProps) {
   const findWallpaperIndex = useCallback(
     (targetPath?: string | null) => {
@@ -52,30 +56,39 @@ export default function Cardflow({
     [images]
   );
 
-  const [virtualIndex, setVirtualIndex] = useState(() => findWallpaperIndex(lastWallpaper));
+  const [virtualIndex, setVirtualIndex] = useState(() =>
+    randomOnOpen ? pickRandomIndex(images.length) : findWallpaperIndex(lastWallpaper)
+  );
   const [loadedHighResMap, setLoadedHighResMap] = useState<Record<string, boolean>>({});
 
   const count = images.length;
+  const countRef = useRef(count);
+  countRef.current = count;
+  const activeActualIndexRef = useRef(0);
 
   // Initial sync if lastWallpaper or images become available after mount
-  const initialSyncDoneRef = useRef(Boolean(lastWallpaper && images.length > 0));
+  const initialSyncDoneRef = useRef(randomOnOpen || Boolean(lastWallpaper && images.length > 0));
   useEffect(() => {
-    if (!initialSyncDoneRef.current && images.length > 0 && lastWallpaper) {
+    if (!initialSyncDoneRef.current && !randomOnOpen && images.length > 0 && lastWallpaper) {
       const targetIdx = findWallpaperIndex(lastWallpaper);
       if (targetIdx !== 0) {
         setVirtualIndex(targetIdx);
       }
       initialSyncDoneRef.current = true;
     }
-  }, [images, lastWallpaper, findWallpaperIndex]);
+  }, [images, lastWallpaper, findWallpaperIndex, randomOnOpen]);
 
   // Re-sync when window is reopened / reset requested
   useEffect(() => {
     const handleReset = (e: Event) => {
-      const customEvent = e as CustomEvent<{ lastWallpaper?: string | null }>;
+      const customEvent = e as CustomEvent<{ lastWallpaper?: string | null; random?: boolean }>;
+      switchStartRef.current = performance.now();
+      if (customEvent.detail?.random) {
+        setVirtualIndex(pickRandomIndex(countRef.current, activeActualIndexRef.current));
+        return;
+      }
       const targetPath = customEvent.detail?.lastWallpaper ?? lastWallpaper;
       const targetIdx = findWallpaperIndex(targetPath);
-      switchStartRef.current = performance.now();
       setVirtualIndex(targetIdx);
     };
 
@@ -98,6 +111,7 @@ export default function Cardflow({
 
   // Actual index in images array
   const activeActualIndex = count > 0 ? ((virtualIndex % count) + count) % count : 0;
+  activeActualIndexRef.current = activeActualIndex;
 
   // Timing and logging refs
   const switchStartRef = useRef<number>(performance.now());
@@ -213,6 +227,12 @@ export default function Cardflow({
 
   const nextSlide = useCallback(() => triggerNavigation(1), [triggerNavigation]);
   const prevSlide = useCallback(() => triggerNavigation(-1), [triggerNavigation]);
+
+  const handleRandomise = useCallback(() => {
+    if (count <= 1) return;
+    switchStartRef.current = performance.now();
+    setVirtualIndex(pickRandomIndex(count, activeActualIndex));
+  }, [count, activeActualIndex]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -505,6 +525,7 @@ export default function Cardflow({
           );
         })}
       </div>
+      {randomOnOpen && <RandomiseButton onRandomise={handleRandomise} />}
       {/* Offscreen Keep-Alive: Retains decoded GPU textures */}
       <div
         className="texture-keepalive"

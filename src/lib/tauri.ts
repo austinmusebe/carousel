@@ -56,6 +56,15 @@ export async function setPreventHide(prevent: boolean): Promise<void> {
   return invoke('set_prevent_hide', { prevent });
 }
 
+export function pickRandomIndex(count: number, excludeIndex?: number): number {
+  if (count <= 1) return 0;
+  if (excludeIndex !== undefined && excludeIndex >= 0 && excludeIndex < count) {
+    const offset = 1 + Math.floor(Math.random() * (count - 1));
+    return (excludeIndex + offset) % count;
+  }
+  return Math.floor(Math.random() * count);
+}
+
 export async function saveSettings(
   shortcut: string,
   directory: string,
@@ -73,7 +82,8 @@ export async function saveSettings(
   vinylRotation?: boolean,
   vinylSpeed?: VinylSpeed,
   vinylArmTracking?: boolean,
-  animationStyle?: AnimationStyle
+  animationStyle?: AnimationStyle,
+  randomWallpaperOnOpen?: boolean
 ): Promise<void> {
   return invoke('save_settings', {
     shortcut,
@@ -93,6 +103,7 @@ export async function saveSettings(
     vinylSpeed,
     vinylArmTracking,
     animationStyle,
+    randomWallpaperOnOpen,
   });
 }
 

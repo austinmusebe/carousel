@@ -428,6 +428,7 @@ fn save_settings(
     vinyl_speed: Option<String>,
     vinyl_arm_tracking: Option<bool>,
     animation_style: Option<String>,
+    random_wallpaper_on_open: Option<bool>,
 ) -> Result<(), String> {
     use tauri_plugin_autostart::ManagerExt;
     let wallpaper_engine_directory = wallpaper_engine_directory.trim().to_string();
@@ -483,6 +484,9 @@ fn save_settings(
     }
     if let Some(anim) = animation_style {
         config.animation_style = config::pick_option(&anim, config::ANIMATION_STYLES);
+    }
+    if let Some(random_on_open) = random_wallpaper_on_open {
+        config.random_wallpaper_on_open = random_on_open;
     }
     config.save(&app);
 

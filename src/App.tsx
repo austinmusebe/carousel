@@ -58,6 +58,7 @@ export default function App() {
   const [blurSource, setBlurSource] = useState<BlurSource>('wallpaper');
   const [backdropImage, setBackdropImage] = useState<string | null>(null);
   const [lastWallpaper, setLastWallpaper] = useState<string | null>(null);
+  const [randomWallpaperOnOpen, setRandomWallpaperOnOpen] = useState<boolean>(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const { images, loading, error, refresh, hasScanned } = useWallpapers(false);
   const hasTriggeredScanRef = useRef(false);
@@ -153,6 +154,9 @@ export default function App() {
         if (config.last_wallpaper) {
           setLastWallpaper(config.last_wallpaper);
         }
+        if (typeof config.random_wallpaper_on_open === 'boolean') {
+          setRandomWallpaperOnOpen(config.random_wallpaper_on_open);
+        }
         if (valid && !config.autostart_prompted) {
           setShowAutostartPrompt(true);
         }
@@ -187,6 +191,8 @@ export default function App() {
           if (config.last_wallpaper !== undefined) {
             setLastWallpaper(config.last_wallpaper);
           }
+          const isRandomOnOpen = Boolean(config.random_wallpaper_on_open);
+          setRandomWallpaperOnOpen(isRandomOnOpen);
           applyStyleConfig(config, isShow);
           if (config.vinyl_skin) setVinylSkin(config.vinyl_skin);
           if (typeof config.vinyl_rotation === 'boolean') setVinylRotation(config.vinyl_rotation);
@@ -202,11 +208,23 @@ export default function App() {
           if (config.blur_source) {
             setBlurSource(config.blur_source);
           }
-          window.dispatchEvent(
-            new CustomEvent('reset-to-last-wallpaper', {
-              detail: { lastWallpaper: config.last_wallpaper },
-            })
-          );
+          if (isRandomOnOpen) {
+            if (isShow) {
+              requestAnimationFrame(() => {
+                window.dispatchEvent(
+                  new CustomEvent('reset-to-last-wallpaper', {
+                    detail: { lastWallpaper: config.last_wallpaper, random: true },
+                  })
+                );
+              });
+            }
+          } else {
+            window.dispatchEvent(
+              new CustomEvent('reset-to-last-wallpaper', {
+                detail: { lastWallpaper: config.last_wallpaper, random: false },
+              })
+            );
+          }
 
           const valid = hasWallpaperSource(config);
           const sourceKey = wallpaperSourceKey(config);
@@ -234,7 +252,7 @@ export default function App() {
                   setTimeout(() => {
                     window.dispatchEvent(
                       new CustomEvent('reset-to-last-wallpaper', {
-                        detail: { lastWallpaper: config.last_wallpaper },
+                        detail: { lastWallpaper: config.last_wallpaper, random: isRandomOnOpen },
                       })
                     );
                   }, 50);
@@ -345,6 +363,7 @@ export default function App() {
           rotation={vinylRotation}
           speed={vinylSpeed}
           armTracking={vinylArmTracking}
+          randomOnOpen={randomWallpaperOnOpen}
         />
       ) : isStyleflowMode(displayMode) ? (
         <Styleflow
@@ -363,6 +382,7 @@ export default function App() {
           selectedColor={selectedColor}
           onSelectColor={setSelectedColor}
           animationStyle={animationStyle}
+          randomOnOpen={randomWallpaperOnOpen}
         />
       ) : displayMode === 'card' ? (
         <Cardflow
@@ -377,6 +397,7 @@ export default function App() {
           selectedColor={selectedColor}
           onSelectColor={setSelectedColor}
           animationStyle={animationStyle}
+          randomOnOpen={randomWallpaperOnOpen}
         />
       ) : displayMode === 'shard' ? (
         <Shardflow
@@ -391,6 +412,7 @@ export default function App() {
           selectedColor={selectedColor}
           onSelectColor={setSelectedColor}
           animationStyle={animationStyle}
+          randomOnOpen={randomWallpaperOnOpen}
         />
       ) : (
         <Coverflow
@@ -405,6 +427,7 @@ export default function App() {
           selectedColor={selectedColor}
           onSelectColor={setSelectedColor}
           animationStyle={animationStyle}
+          randomOnOpen={randomWallpaperOnOpen}
         />
       )}
     </>
